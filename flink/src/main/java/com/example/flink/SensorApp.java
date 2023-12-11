@@ -5,13 +5,10 @@ import static org.bytedeco.opencv.global.opencv_core.multiply;
 import java.time.Duration;
 import java.util.Optional;
 
-import org.apache.commons.math3.analysis.function.Cos;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.functions.KeySelector;
-import org.apache.flink.configuration.ConfigOption;
-import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -127,8 +124,11 @@ public class SensorApp {
 									realMatIndexer.putDouble(position, realArray[index]);
 									imaginaryMatIndexer.putDouble(position, imaginaryArray[index]);
 								}
+								// remove
+								collector.collect(sampleData);
 							}
-							multiply(realMat, imaginaryMat);
+							// TODO multiply(realMat, imaginaryMat, coefficientRealMat,
+							// coefficientImaginaryMat);
 						}
 					}
 				})
