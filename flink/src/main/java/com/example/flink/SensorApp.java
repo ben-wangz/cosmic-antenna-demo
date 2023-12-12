@@ -48,6 +48,9 @@ public class SensorApp {
 		long sleepTimeInterval = Optional.ofNullable(System.getenv("SLEEP_TIME_INTERVAL"))
 				.map(envString -> Long.parseLong(envString))
 				.orElse(1000L);
+		int serverPort = Optional.ofNullable(System.getenv("FPGA_SERVER_PORT"))
+				.map(envString -> Integer.parseInt(envString))
+				.orElse(18888);
 		// configure flink environment
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(
 				new Configuration()
@@ -56,7 +59,8 @@ public class SensorApp {
 						.set(CosmicAntennaConf.ANTENNA_SIZE, antennaSize)
 						.set(CosmicAntennaConf.START_COUNTER, startCounter)
 						.set(CosmicAntennaConf.SLEEP_TIME_INTERVAL, sleepTimeInterval)
-						.set(CosmicAntennaConf.START_COUNTER, startCounter));
+						.set(CosmicAntennaConf.FPGA_SERVER_PORT, serverPort)
+		);
 		// configure watermark interval
 		env.getConfig().setAutoWatermarkInterval(1000L);
 		DataStream<SampleData> sensorReadingStream = env

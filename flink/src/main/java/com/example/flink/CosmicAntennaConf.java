@@ -24,4 +24,8 @@ public class CosmicAntennaConf {
             .key("cosmic.antenna.sleepTimeInterval")
             .longType()
             .defaultValue(1000L);
+    public static final ConfigOption<Integer> FPGA_SERVER_PORT = ConfigOptions
+            .key("cosmic.antenna.fpga.port")
+            .intType()
+            .defaultValue(18888);
 }
