@@ -20,10 +20,12 @@ public class MockServer {
 
     private final ChannelGroup defaultChannelGroup;
 
+    private final int UDPPackageSize;
     private ChannelId defaultChannelId;
 
 
-    public MockServer() {
+    public MockServer(int UDPPackageSize) {
+        this.UDPPackageSize = UDPPackageSize;
         this.bossLoopGroup = new NioEventLoopGroup();
         this.defaultChannelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
     }
@@ -39,6 +41,7 @@ public class MockServer {
                 .channel(NioDatagramChannel.class)
                 .option(ChannelOption.AUTO_CLOSE, true)
                 .option(ChannelOption.SO_REUSEADDR, true)
+                .option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(UDPPackageSize))
                 .option(ChannelOption.SO_BROADCAST, true);
 
         bootstrap.handler(new ChannelInitializer<DatagramChannel>() {

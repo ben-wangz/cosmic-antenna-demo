@@ -13,7 +13,7 @@ public class ServerTestEntry {
         try {
 
             System.out.println("Starting up the server on port 18888 ...");
-            MockServer mockServer = new MockServer();
+            MockServer mockServer = new MockServer(8192);
             mockServer.startup(18888);
             mockServer.registerHandler("ssss", SampleDataHandler.builder().build());
 

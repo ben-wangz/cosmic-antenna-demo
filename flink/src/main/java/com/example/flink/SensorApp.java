@@ -5,6 +5,7 @@ import static org.bytedeco.opencv.global.opencv_core.multiply;
 import java.time.Duration;
 import java.util.Optional;
 
+import com.example.flink.source.TempSource;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.typeinfo.Types;
@@ -51,6 +52,9 @@ public class SensorApp {
 		int serverPort = Optional.ofNullable(System.getenv("FPGA_SERVER_PORT"))
 				.map(envString -> Integer.parseInt(envString))
 				.orElse(18888);
+		int UDPPackageSize = Optional.ofNullable(System.getenv("FPGA_PACKAGE_SIZE"))
+				.map(envString -> Integer.parseInt(envString))
+				.orElse(8192);
 		// configure flink environment
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(
 				new Configuration()
@@ -60,11 +64,12 @@ public class SensorApp {
 						.set(CosmicAntennaConf.START_COUNTER, startCounter)
 						.set(CosmicAntennaConf.SLEEP_TIME_INTERVAL, sleepTimeInterval)
 						.set(CosmicAntennaConf.FPGA_SERVER_PORT, serverPort)
+						.set(CosmicAntennaConf.FPGA_PACKAGE_SIZE, UDPPackageSize)
 		);
 		// configure watermark interval
 		env.getConfig().setAutoWatermarkInterval(1000L);
 		DataStream<SampleData> sensorReadingStream = env
-				.addSource(new SensorSource())
+				.addSource(new TempSource())
 				.assignTimestampsAndWatermarks(
 						WatermarkStrategy
 								.<SampleData>forBoundedOutOfOrderness(Duration.ofMillis(timeSampleUnitSize * 10))

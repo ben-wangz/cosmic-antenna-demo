@@ -28,4 +28,8 @@ public class CosmicAntennaConf {
             .key("cosmic.antenna.fpga.port")
             .intType()
             .defaultValue(18888);
+    public static final ConfigOption<Integer> FPGA_PACKAGE_SIZE = ConfigOptions
+            .key("cosmic.antenna.fpga.package.size")
+            .intType()
+            .defaultValue(8192);
 }

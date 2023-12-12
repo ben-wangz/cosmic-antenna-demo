@@ -12,6 +12,8 @@ import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+
 @EqualsAndHashCode(callSuper = true)
 @ToString
 public class SensorSource extends RichParallelSourceFunction<SampleData> {
@@ -23,7 +25,7 @@ public class SensorSource extends RichParallelSourceFunction<SampleData> {
 
     @Override
     public void open(Configuration configuration) throws Exception {
-        mockServer = new MockServer();
+        mockServer = new MockServer(configuration.get(CosmicAntennaConf.FPGA_PACKAGE_SIZE));
         mockServer.startup(configuration.get(CosmicAntennaConf.FPGA_SERVER_PORT));
         LOGGER.info("[SensorSource] sensor source inner server started at {}", configuration.get(CosmicAntennaConf.FPGA_SERVER_PORT));
     }
@@ -33,10 +35,12 @@ public class SensorSource extends RichParallelSourceFunction<SampleData> {
         SampleDataHandler sampleDataHandler = SampleDataHandler.builder()
                 .sourceContext(sourceContext)
                 .build();
-        sourceContext.markAsTemporarilyIdle();
 
         mockServer.registerHandler("actual-handler", sampleDataHandler);
         LOGGER.info("[SensorSource] sensor source inner server registered a new handler");
+        while (running){
+            TimeUnit.MILLISECONDS.sleep(1000L);
+        }
     }
 
     @Override
