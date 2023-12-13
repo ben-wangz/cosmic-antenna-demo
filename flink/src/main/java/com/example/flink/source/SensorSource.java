@@ -38,9 +38,8 @@ public class SensorSource extends RichParallelSourceFunction<SampleData> {
 
         mockServer.registerHandler("actual-handler", sampleDataHandler);
         LOGGER.info("[SensorSource] sensor source inner server registered a new handler");
-        while (running){
-            TimeUnit.MILLISECONDS.sleep(1000L);
-        }
+
+        mockServer.join(Thread.currentThread());
     }
 
     @Override

@@ -40,7 +40,7 @@ public class MockServer {
         bootstrap.group(bossLoopGroup)
                 .channel(NioDatagramChannel.class)
                 .option(ChannelOption.AUTO_CLOSE, true)
-                .option(ChannelOption.SO_REUSEADDR, true)
+//                .option(ChannelOption.SO_REUSEADDR, true)
                 .option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(UDPPackageSize))
                 .option(ChannelOption.SO_BROADCAST, true);
 
@@ -76,5 +76,9 @@ public class MockServer {
     public final void shutdown() throws Exception {
         defaultChannelGroup.close();
         bossLoopGroup.shutdownGracefully();
+    }
+
+    public void join(Thread other) throws InterruptedException {
+        Thread.currentThread().join();
     }
 }

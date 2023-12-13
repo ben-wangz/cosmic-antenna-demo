@@ -5,6 +5,7 @@ import static org.bytedeco.opencv.global.opencv_core.multiply;
 import java.time.Duration;
 import java.util.Optional;
 
+import com.example.flink.source.ServerSource;
 import com.example.flink.source.TempSource;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -69,7 +70,8 @@ public class SensorApp {
 		// configure watermark interval
 		env.getConfig().setAutoWatermarkInterval(1000L);
 		DataStream<SampleData> sensorReadingStream = env
-				.addSource(new SensorSource())
+				.addSource(new ServerSource())
+				.setParallelism(2)
 				.assignTimestampsAndWatermarks(
 						WatermarkStrategy
 								.<SampleData>forBoundedOutOfOrderness(Duration.ofMillis(timeSampleUnitSize * 10))
@@ -163,6 +165,7 @@ public class SensorApp {
 						}
 					}
 				}).returns(Types.POJO(SensorReading.class));
+
 		transformedReadingStream.addSink(SensorSink.builder().build());
 		env.execute("transform example of sensor reading");
 	}
