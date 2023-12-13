@@ -20,6 +20,7 @@ import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunctio
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -65,11 +66,13 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
             }
         });
 
-        int tempPort = ThreadLocalRandom.current().nextInt(10000, 65535);
         try {
             ChannelFuture channelFuture = serverBootstrap
-                    .bind(tempPort)
+                    .bind(0)
                     .sync();
+            LOGGER.info("[ServerSource] sensor source inner server started at {}",
+                    ((InetSocketAddress) channelFuture.channel().localAddress()).getPort());
+
             defaultChannelId = channelFuture.channel().id();
             defaultChannelGroup.add(channelFuture.channel());
         } catch (Exception e) {
@@ -77,7 +80,6 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
             throw e;
         }
 
-        LOGGER.info("[ServerSource] sensor source inner server started at {}", tempPort);
     }
 
     @Override
