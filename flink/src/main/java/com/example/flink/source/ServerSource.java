@@ -22,8 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 @EqualsAndHashCode(callSuper = true)
 @ToString
@@ -66,19 +64,14 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
             }
         });
 
-        try {
-            ChannelFuture channelFuture = serverBootstrap
-                    .bind(0)
-                    .sync();
-            LOGGER.info("[ServerSource] sensor source inner server started at {}",
-                    ((InetSocketAddress) channelFuture.channel().localAddress()).getPort());
+        ChannelFuture channelFuture = serverBootstrap
+                .bind(0)
+                .sync();
+        LOGGER.info("[ServerSource] sensor source inner server started at {}",
+                ((InetSocketAddress) channelFuture.channel().localAddress()).getPort());
 
-            defaultChannelId = channelFuture.channel().id();
-            defaultChannelGroup.add(channelFuture.channel());
-        } catch (Exception e) {
-            cancel();
-            throw e;
-        }
+        defaultChannelId = channelFuture.channel().id();
+        defaultChannelGroup.add(channelFuture.channel());
 
     }
 
@@ -101,8 +94,12 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
 
     @Override
     public void cancel() {
-        defaultChannelGroup.close();
-        eventLoopGroup.shutdownGracefully();
+        if (null != defaultChannelGroup) {
+            defaultChannelGroup.close();
+        }
+        if (null != eventLoopGroup) {
+            eventLoopGroup.shutdownGracefully();
+        }
     }
 
 }

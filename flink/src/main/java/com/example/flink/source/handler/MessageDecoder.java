@@ -3,7 +3,6 @@ package com.example.flink.source.handler;
 import org.apache.flink.shaded.netty4.io.netty.buffer.ByteBuf;
 import org.apache.flink.shaded.netty4.io.netty.buffer.ByteBufUtil;
 import org.apache.flink.shaded.netty4.io.netty.buffer.Unpooled;
-import org.apache.flink.shaded.netty4.io.netty.channel.ChannelFutureListener;
 import org.apache.flink.shaded.netty4.io.netty.channel.ChannelHandlerContext;
 import org.apache.flink.shaded.netty4.io.netty.channel.socket.DatagramPacket;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.MessageToMessageDecoder;
@@ -35,21 +34,8 @@ public class MessageDecoder extends MessageToMessageDecoder<DatagramPacket> {
 
         out.add(ByteBufUtil.getBytes(in));
 
-        final WriteListener listener = success -> {
-            if (success) {
-                LOGGER.debug("[MessageDecoder] response client success.");
-            }else {
-                LOGGER.warn("[MessageDecoder] response client failed.");
-            }
-        };
-
         ByteBuf buf = Unpooled.wrappedBuffer("[From Server] Message received.".getBytes());
-        ctx.channel().writeAndFlush(new DatagramPacket(buf, packet.sender()))
-                .addListener((ChannelFutureListener) future -> listener.messageRespond(future.isSuccess()));
-    }
-
-    public interface WriteListener {
-        void messageRespond(boolean success);
+        ctx.channel().writeAndFlush(new DatagramPacket(buf, packet.sender()));
     }
 
 }
