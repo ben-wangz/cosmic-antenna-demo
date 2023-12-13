@@ -12,12 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 
-/**
- * {@link MessageDecoder} is the Message decoder from byte to string using {@link MessageToMessageDecoder}.
- *
- * @author Sameer Narkhede See <a href="https://narkhedesam.com">https://narkhedesam.com</a>
- * @since Sept 2020
- */
 public class MessageDecoder extends MessageToMessageDecoder<DatagramPacket> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageDecoder.class);

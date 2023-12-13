@@ -19,13 +19,6 @@ public class ByteDataHandler extends SimpleChannelInboundHandler<byte[]> {
     private SourceFunction.SourceContext<SampleData> sourceContext;
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        super.exceptionCaught(ctx, cause);
-        LOGGER.error(cause.getLocalizedMessage());
-    }
-
-
-    @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, byte[] bytes) throws Exception {
         Object deserialized = SerializationUtils.deserialize(bytes);
         LOGGER.warn("[ByteDataHandler] Message Received : " + deserialized);
