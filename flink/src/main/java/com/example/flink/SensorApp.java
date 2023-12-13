@@ -1,12 +1,9 @@
 package com.example.flink;
 
-import static org.bytedeco.opencv.global.opencv_core.multiply;
-
 import java.time.Duration;
 import java.util.Optional;
 
 import com.example.flink.source.ServerSource;
-import com.example.flink.source.TempSource;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.typeinfo.Types;
@@ -25,7 +22,6 @@ import org.bytedeco.opencv.opencv_core.Mat;
 import com.example.flink.data.SampleData;
 import com.example.flink.data.SensorReading;
 import com.example.flink.sink.SensorSink;
-import com.example.flink.source.SensorSource;
 import com.google.common.base.Preconditions;
 
 public class SensorApp {
@@ -50,9 +46,6 @@ public class SensorApp {
 		long sleepTimeInterval = Optional.ofNullable(System.getenv("SLEEP_TIME_INTERVAL"))
 				.map(envString -> Long.parseLong(envString))
 				.orElse(1000L);
-		int serverPort = Optional.ofNullable(System.getenv("FPGA_SERVER_PORT"))
-				.map(envString -> Integer.parseInt(envString))
-				.orElse(18888);
 		int UDPPackageSize = Optional.ofNullable(System.getenv("FPGA_PACKAGE_SIZE"))
 				.map(envString -> Integer.parseInt(envString))
 				.orElse(8192);
@@ -64,7 +57,6 @@ public class SensorApp {
 						.set(CosmicAntennaConf.ANTENNA_SIZE, antennaSize)
 						.set(CosmicAntennaConf.START_COUNTER, startCounter)
 						.set(CosmicAntennaConf.SLEEP_TIME_INTERVAL, sleepTimeInterval)
-						.set(CosmicAntennaConf.FPGA_SERVER_PORT, serverPort)
 						.set(CosmicAntennaConf.FPGA_PACKAGE_SIZE, UDPPackageSize)
 		);
 		// configure watermark interval

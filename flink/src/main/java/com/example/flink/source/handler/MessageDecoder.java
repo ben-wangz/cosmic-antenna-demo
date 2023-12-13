@@ -1,14 +1,15 @@
 package com.example.flink.source.handler;
 
-import com.example.flink.data.SampleData;
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.flink.shaded.netty4.io.netty.buffer.ByteBuf;
 import org.apache.flink.shaded.netty4.io.netty.buffer.ByteBufUtil;
+import org.apache.flink.shaded.netty4.io.netty.buffer.Unpooled;
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelFutureListener;
 import org.apache.flink.shaded.netty4.io.netty.channel.ChannelHandlerContext;
 import org.apache.flink.shaded.netty4.io.netty.channel.socket.DatagramPacket;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.MessageToMessageDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
 import java.util.List;
 
 
@@ -20,24 +21,35 @@ import java.util.List;
  */
 public class MessageDecoder extends MessageToMessageDecoder<DatagramPacket> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(MessageDecoder.class);
+
     @Override
     protected void decode(ChannelHandlerContext ctx, DatagramPacket packet, List<Object> out) throws Exception {
-
-//        InetSocketAddress sender = packet.sender();
 
         ByteBuf in = packet.content();
         int readableBytes = in.readableBytes();
         if (readableBytes <= 0) {
+            LOGGER.warn("[MessageDecoder] got empty packet");
             return;
         }
 
-        //get data from datagram package
-        Object deserialized = SerializationUtils.deserialize(ByteBufUtil.getBytes(in));
+        out.add(ByteBufUtil.getBytes(in));
 
-        if (deserialized instanceof SampleData) {
-            ((SampleData) deserialized).setSender(packet.sender());
-            out.add(deserialized);
-        }
+        final WriteListener listener = success -> {
+            if (success) {
+                LOGGER.debug("[MessageDecoder] response client success.");
+            }else {
+                LOGGER.warn("[MessageDecoder] response client failed.");
+            }
+        };
+
+        ByteBuf buf = Unpooled.wrappedBuffer("[From Server] Message received.".getBytes());
+        ctx.channel().writeAndFlush(new DatagramPacket(buf, packet.sender()))
+                .addListener((ChannelFutureListener) future -> listener.messageRespond(future.isSuccess()));
+    }
+
+    public interface WriteListener {
+        void messageRespond(boolean success);
     }
 
 }

@@ -29,9 +29,6 @@ public class SampleData implements Serializable {
     private byte[] realArray;
     private byte[] imaginaryArray;
 
-    @ToString.Exclude
-    private InetSocketAddress sender = null;
-
     @Jacksonized
     @Builder(toBuilder = true)
     public SampleData(

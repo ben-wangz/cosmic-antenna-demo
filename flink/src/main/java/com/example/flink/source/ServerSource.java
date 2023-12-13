@@ -2,9 +2,8 @@ package com.example.flink.source;
 
 import com.example.flink.CosmicAntennaConf;
 import com.example.flink.data.SampleData;
+import com.example.flink.source.handler.ByteDataHandler;
 import com.example.flink.source.handler.MessageDecoder;
-import com.example.flink.source.handler.SampleDataHandler;
-import com.example.flink.source.server.MockServer;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.flink.configuration.Configuration;
@@ -15,18 +14,23 @@ import org.apache.flink.shaded.netty4.io.netty.channel.group.DefaultChannelGroup
 import org.apache.flink.shaded.netty4.io.netty.channel.nio.NioEventLoopGroup;
 import org.apache.flink.shaded.netty4.io.netty.channel.socket.DatagramChannel;
 import org.apache.flink.shaded.netty4.io.netty.channel.socket.nio.NioDatagramChannel;
+import org.apache.flink.shaded.netty4.io.netty.handler.codec.MessageToMessageDecoder;
 import org.apache.flink.shaded.netty4.io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 @EqualsAndHashCode(callSuper = true)
 @ToString
 public class ServerSource extends RichParallelSourceFunction<SampleData> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerSource.class);
+
+    private static final String BLOCK_HANDLER = "BLOCK-HANDLER";
 
     private EventLoopGroup eventLoopGroup;
 
@@ -44,7 +48,6 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
         serverBootstrap.group(eventLoopGroup)
                 .channel(NioDatagramChannel.class)
                 .option(ChannelOption.AUTO_CLOSE, true)
-                .option(ChannelOption.SO_REUSEADDR, true)
                 .option(ChannelOption.RCVBUF_ALLOCATOR,
                         new FixedRecvByteBufAllocator(configuration.get(CosmicAntennaConf.FPGA_PACKAGE_SIZE)))
                 .option(ChannelOption.SO_BROADCAST, true);
@@ -53,7 +56,12 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
             @Override
             protected void initChannel(DatagramChannel datagramChannel) throws Exception {
                 ChannelPipeline pipeline = datagramChannel.pipeline();
-                pipeline.addLast("sample-data-decoder", new MessageDecoder());
+                pipeline.addLast(BLOCK_HANDLER, new MessageToMessageDecoder<>() {
+                    @Override
+                    protected void decode(ChannelHandlerContext ctx, Object obj, List<Object> out) throws Exception {
+                        Thread.currentThread().wait();
+                    }
+                });
             }
         });
 
@@ -74,12 +82,15 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
 
     @Override
     public void run(SourceContext<SampleData> sourceContext) throws Exception {
-        SampleDataHandler sampleDataHandler = SampleDataHandler.builder()
-                .sourceContext(sourceContext)
-                .build();
+        ChannelPipeline channelPipeline = defaultChannelGroup.find(defaultChannelId).pipeline();
 
-        Channel defaultChannel = defaultChannelGroup.find(defaultChannelId);
-        defaultChannel.pipeline().addLast("actual-handler", sampleDataHandler);
+        channelPipeline.remove(BLOCK_HANDLER);
+        LOGGER.info("[ServerSource] sensor source inner server unregistered the blocking handler");
+
+        channelPipeline.addLast("sample-data-decoder", new MessageDecoder());
+        channelPipeline.addLast("actual-handler", ByteDataHandler.builder()
+                .sourceContext(sourceContext)
+                .build());
 
         LOGGER.info("[ServerSource] sensor source inner server registered a new handler");
 
