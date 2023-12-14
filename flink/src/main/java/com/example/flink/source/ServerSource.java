@@ -2,8 +2,8 @@ package com.example.flink.source;
 
 import com.example.flink.CosmicAntennaConf;
 import com.example.flink.data.SampleData;
-import com.example.flink.source.handler.ByteDataHandler;
 import com.example.flink.source.handler.MessageDecoder;
+import com.example.flink.source.handler.SampleDataHandler;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.flink.configuration.Configuration;
@@ -37,9 +37,12 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
 
     private ChannelId defaultChannelId;
 
+    private int timeSampleSize;
+
 
     @Override
     public void open(Configuration configuration) throws Exception {
+        timeSampleSize = configuration.get(CosmicAntennaConf.TIME_SAMPLE_SIZE);
         eventLoopGroup = new NioEventLoopGroup();
         defaultChannelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
@@ -65,7 +68,7 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
         });
 
         ChannelFuture channelFuture = serverBootstrap
-                .bind(0)
+                .bind(18888)
                 .sync();
         LOGGER.info("[ServerSource] sensor source inner server started at {}",
                 ((InetSocketAddress) channelFuture.channel().localAddress()).getPort());
@@ -82,9 +85,12 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
         channelPipeline.remove(BLOCK_HANDLER);
         LOGGER.info("[ServerSource] sensor source inner server unregistered the blocking handler");
 
-        channelPipeline.addLast("sample-data-decoder", new MessageDecoder());
-        channelPipeline.addLast("actual-handler", ByteDataHandler.builder()
+        channelPipeline.addLast("sample-data-decoder", MessageDecoder.builder()
+                .timeSampleSize(timeSampleSize)
+                .build());
+        channelPipeline.addLast("actual-handler", SampleDataHandler.builder()
                 .sourceContext(sourceContext)
+                .timeSampleSize(timeSampleSize)
                 .build());
 
         LOGGER.info("[ServerSource] sensor source inner server registered a new handler");

@@ -63,7 +63,7 @@ public class SensorApp {
 		env.getConfig().setAutoWatermarkInterval(1000L);
 		DataStream<SampleData> sensorReadingStream = env
 				.addSource(new ServerSource())
-				.setParallelism(2)
+				.setParallelism(1)
 				.assignTimestampsAndWatermarks(
 						WatermarkStrategy
 								.<SampleData>forBoundedOutOfOrderness(Duration.ofMillis(timeSampleUnitSize * 10))
