@@ -24,4 +24,8 @@ public class CosmicAntennaConf {
             .key("cosmic.antenna.sleepTimeInterval")
             .longType()
             .defaultValue(1000L);
+    public static final ConfigOption<Integer> FPGA_PACKAGE_SIZE = ConfigOptions
+            .key("cosmic.antenna.fpga.package.size")
+            .intType()
+            .defaultValue(8192);
 }

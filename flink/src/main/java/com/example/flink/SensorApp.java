@@ -1,10 +1,9 @@
 package com.example.flink;
 
-import static org.bytedeco.opencv.global.opencv_core.multiply;
-
 import java.time.Duration;
 import java.util.Optional;
 
+import com.example.flink.source.ServerSource;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.typeinfo.Types;
@@ -23,7 +22,6 @@ import org.bytedeco.opencv.opencv_core.Mat;
 import com.example.flink.data.SampleData;
 import com.example.flink.data.SensorReading;
 import com.example.flink.sink.SensorSink;
-import com.example.flink.source.SensorSource;
 import com.google.common.base.Preconditions;
 
 public class SensorApp {
@@ -48,6 +46,9 @@ public class SensorApp {
 		long sleepTimeInterval = Optional.ofNullable(System.getenv("SLEEP_TIME_INTERVAL"))
 				.map(envString -> Long.parseLong(envString))
 				.orElse(1000L);
+		int UDPPackageSize = Optional.ofNullable(System.getenv("FPGA_PACKAGE_SIZE"))
+				.map(envString -> Integer.parseInt(envString))
+				.orElse(8192);
 		// configure flink environment
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(
 				new Configuration()
@@ -56,11 +57,13 @@ public class SensorApp {
 						.set(CosmicAntennaConf.ANTENNA_SIZE, antennaSize)
 						.set(CosmicAntennaConf.START_COUNTER, startCounter)
 						.set(CosmicAntennaConf.SLEEP_TIME_INTERVAL, sleepTimeInterval)
-						.set(CosmicAntennaConf.START_COUNTER, startCounter));
+						.set(CosmicAntennaConf.FPGA_PACKAGE_SIZE, UDPPackageSize)
+		);
 		// configure watermark interval
 		env.getConfig().setAutoWatermarkInterval(1000L);
 		DataStream<SampleData> sensorReadingStream = env
-				.addSource(new SensorSource())
+				.addSource(new ServerSource())
+				.setParallelism(2)
 				.assignTimestampsAndWatermarks(
 						WatermarkStrategy
 								.<SampleData>forBoundedOutOfOrderness(Duration.ofMillis(timeSampleUnitSize * 10))
@@ -154,6 +157,7 @@ public class SensorApp {
 						}
 					}
 				}).returns(Types.POJO(SensorReading.class));
+
 		transformedReadingStream.addSink(SensorSink.builder().build());
 		env.execute("transform example of sensor reading");
 	}
