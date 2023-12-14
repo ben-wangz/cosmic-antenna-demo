@@ -19,7 +19,8 @@ repositories {
 val lombokDependency = "org.projectlombok:lombok:1.18.22"
 var flinkVersion = "1.17.1"
 val jacksonVersion = "2.13.4"
-var log4jVersion = "2.17.1"
+var slf4jVersion = "2.0.9"
+var logbackVersion = "1.4.14"
 dependencies {
     annotationProcessor(lombokDependency)
     implementation("com.google.guava:guava:32.1.1-jre")
@@ -27,11 +28,12 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-core:${jacksonVersion}")
     implementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
     implementation("org.bytedeco:javacv-platform:1.5.9")
+    implementation("org.slf4j:slf4j-api:${slf4jVersion}")
+
     shadow("org.apache.flink:flink-streaming-java:${flinkVersion}")
     shadow("org.apache.flink:flink-clients:${flinkVersion}")
-    shadow("org.apache.logging.log4j:log4j-slf4j-impl:${log4jVersion}")
-    shadow("org.apache.logging.log4j:log4j-api:${log4jVersion}")
-    shadow("org.apache.logging.log4j:log4j-core:${log4jVersion}")
+    shadow("ch.qos.logback:logback-classic:${logbackVersion}")
+    shadow("ch.qos.logback:logback-core:${logbackVersion}")
     shadow(lombokDependency)
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.3")
