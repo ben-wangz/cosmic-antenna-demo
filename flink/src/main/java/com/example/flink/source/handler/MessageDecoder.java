@@ -31,7 +31,7 @@ public class MessageDecoder extends MessageToMessageDecoder<DatagramPacket> {
             LOGGER.warn("Got empty UDP package");
             return;
         } else if (readableBytes != (12 + timeSampleSize * 2)) {
-            LOGGER.error("unacceptable UDP package");
+            LOGGER.error("Got an unacceptable UDP package");
             return;
         }
 

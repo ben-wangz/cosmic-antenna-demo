@@ -31,6 +31,10 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
 
     private static final String BLOCK_HANDLER = "BLOCK-HANDLER";
 
+    private static final String DECODER_IDENTIFIER = "sample-data-decoder";
+
+    private static final String BYTE_DATA_HANDLER_IDENTIFIER = "byte-data-handler";
+
     private EventLoopGroup eventLoopGroup;
 
     private ChannelGroup defaultChannelGroup;
@@ -38,7 +42,6 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
     private ChannelId defaultChannelId;
 
     private int timeSampleSize;
-
 
     @Override
     public void open(Configuration configuration) throws Exception {
@@ -68,10 +71,9 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
         });
 
         ChannelFuture channelFuture = serverBootstrap
-                .bind(18888)
+                .bind(0)
                 .sync();
-        LOGGER.info("[ServerSource] sensor source inner server started at {}",
-                ((InetSocketAddress) channelFuture.channel().localAddress()).getPort());
+        LOGGER.info("inner netty server started at {}", ((InetSocketAddress) channelFuture.channel().localAddress()).getPort());
 
         defaultChannelId = channelFuture.channel().id();
         defaultChannelGroup.add(channelFuture.channel());
@@ -83,17 +85,18 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
         ChannelPipeline channelPipeline = defaultChannelGroup.find(defaultChannelId).pipeline();
 
         channelPipeline.remove(BLOCK_HANDLER);
-        LOGGER.info("[ServerSource] sensor source inner server unregistered the blocking handler");
+        LOGGER.info("inner netty server unregistered the blocking handler");
 
-        channelPipeline.addLast("sample-data-decoder", MessageDecoder.builder()
+        channelPipeline.addLast(DECODER_IDENTIFIER, MessageDecoder.builder()
                 .timeSampleSize(timeSampleSize)
                 .build());
-        channelPipeline.addLast("actual-handler", SampleDataHandler.builder()
+        LOGGER.info("inner netty server registered \"{}\"", DECODER_IDENTIFIER);
+
+        channelPipeline.addLast(BYTE_DATA_HANDLER_IDENTIFIER, SampleDataHandler.builder()
                 .sourceContext(sourceContext)
                 .timeSampleSize(timeSampleSize)
                 .build());
-
-        LOGGER.info("[ServerSource] sensor source inner server registered a new handler");
+        LOGGER.info("inner netty server registered \"{}\"", BYTE_DATA_HANDLER_IDENTIFIER);
 
         Thread.currentThread().join();
     }

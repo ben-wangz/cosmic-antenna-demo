@@ -49,7 +49,7 @@ public class SampleDataHandler extends SimpleChannelInboundHandler<byte[]> {
                 .imaginaryArray(imaginaryArray.array())
                 .build();
 
-        LOGGER.warn("[ByteDataHandler] Message Received : " + sampleData);
+        LOGGER.info("Message received : " + sampleData);
         if (null != sourceContext) {
             sourceContext.collect(sampleData);
         }
