@@ -45,6 +45,13 @@ public class MessageDecoder extends MessageToMessageDecoder<DatagramPacket> {
                 String.format("Message received. channelId:%s, antennaId:%s, counter:%s",
                         channelId.getShort(), antennaId.getShort(), counter.getLong()
                 ).getBytes());
+            LOGGER.warn("[MessageDecoder] got empty packet");
+            return;
+        }
+
+        out.add(ByteBufUtil.getBytes(in));
+
+        ByteBuf buf = Unpooled.wrappedBuffer("[From Server] Message received.".getBytes());
         ctx.channel().writeAndFlush(new DatagramPacket(buf, packet.sender()));
     }
 
