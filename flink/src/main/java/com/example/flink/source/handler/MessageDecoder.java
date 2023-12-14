@@ -37,15 +37,8 @@ public class MessageDecoder extends MessageToMessageDecoder<DatagramPacket> {
 
         byte[] bytes = ByteBufUtil.getBytes(in);
         out.add(bytes);
-        ByteBuffer channelId = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 0, 2));
-        ByteBuffer antennaId = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 2, 4));
-        ByteBuffer counter = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 4, 12));
 
-        ByteBuf buf = Unpooled.wrappedBuffer(
-                String.format("Message received. channelId:%s, antennaId:%s, counter:%s",
-                        channelId.getShort(), antennaId.getShort(), counter.getLong()
-                ).getBytes());
-
+        ByteBuf buf = Unpooled.wrappedBuffer(Arrays.copyOfRange(bytes, 0, 12));
         ctx.channel().writeAndFlush(new DatagramPacket(buf, packet.sender()));
     }
 
