@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
-public class ClientEntry {
+public class ClientApp {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientEntry.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientApp.class);
 
     public static void main(String[] args) {
 
@@ -20,14 +20,16 @@ public class ClientEntry {
             LOGGER.info("Creating a new FPGA UDP Client");
 
             String host = System.getProperty("host", "127.0.0.1");
-            int port = Integer.parseInt(System.getProperty("port", "51720"));
+            int port = Integer.parseInt(System.getProperty("port", "50283"));
             long iter = Long.parseLong(System.getProperty("iter", "1000")) > 0 ?
                     Long.parseLong(System.getProperty("iter", "1000"))
                     : -1;
             int interval = Integer.parseInt(System.getProperty("interval", "3000"));
             int timeSampleSize = Integer.parseInt(System.getProperty("tSize", "2048"));
 
-            FPGAMockClient client = new FPGAMockClient(port);
+            FPGAMockClient client = FPGAMockClient.builder()
+                    .port(port)
+                    .build();
             ChannelFuture channelFuture = client.startup(host);
 
             LOGGER.info("A new FPGA Mock Client is created, [{}:{}, iterator:{}, interval:{}]",
@@ -35,14 +37,16 @@ public class ClientEntry {
 
             for (long index = iter; index != 0; index--) {
                 if (channelFuture.isSuccess()) {
-                    byte[] record = randomRecord(timeSampleSize);
-                    channelFuture.channel().writeAndFlush(Unpooled.wrappedBuffer(record));
+                    channelFuture.channel()
+                            .writeAndFlush(
+                                    Unpooled.wrappedBuffer(randomRecord(timeSampleSize))
+                            );
                 }
                 Thread.sleep(interval);
             }
             client.shutdown();
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error(e.getMessage());
         }
     }
 
@@ -62,7 +66,7 @@ public class ClientEntry {
         byteBuffer.put(antennaId.array());
 
         long longValue = Double.valueOf(Math.random() * Long.MAX_VALUE).longValue();
-        LOGGER.debug("Sent channelId:{}, antennaId:{}, counter:{} ", i1, i2, longValue);
+        LOGGER.info("Sent channelId:{}, antennaId:{}, counter:{} ", i1, i2, longValue);
 
         ByteBuffer counter = ByteBuffer.allocate(8);
         counter.putLong(longValue);
