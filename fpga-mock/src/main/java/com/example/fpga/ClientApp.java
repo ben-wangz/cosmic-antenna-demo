@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.Optional;
 import java.util.Random;
 
 public class ClientApp {
@@ -15,27 +16,31 @@ public class ClientApp {
 
     public static void main(String[] args) {
 
-        try {
+        LOGGER.info("Creating a new FPGA UDP Client");
 
-            LOGGER.info("Creating a new FPGA UDP Client");
+        String host = Optional.ofNullable(System.getenv("FPGA_CLIENT_HOST"))
+                .orElse("127.0.0.1");
+        int port = Optional.ofNullable(System.getenv("FPGA_CLIENT_PORT"))
+                .map(Integer::parseInt)
+                .orElse(53060);
+        int count = Optional.ofNullable(System.getenv("RECORD_COUNT"))
+                .map(Integer::parseInt)
+                .orElse(-1);
+        int interval = Optional.ofNullable(System.getenv("RECORD_INTERVAL"))
+                .map(Integer::parseInt)
+                .orElse(3000);
+        int timeSampleSize = Optional.ofNullable(System.getenv("TIME_SAMPLE_SIZE"))
+                .map(Integer::parseInt)
+                .orElse(2048);
 
-            String host = System.getProperty("host", "127.0.0.1");
-            int port = Integer.parseInt(System.getProperty("port", "50283"));
-            long iter = Long.parseLong(System.getProperty("iter", "1000")) > 0 ?
-                    Long.parseLong(System.getProperty("iter", "1000"))
-                    : -1;
-            int interval = Integer.parseInt(System.getProperty("interval", "3000"));
-            int timeSampleSize = Integer.parseInt(System.getProperty("tSize", "2048"));
+        try (FPGAMockClient client = FPGAMockClient.builder().port(port).build()) {
 
-            FPGAMockClient client = FPGAMockClient.builder()
-                    .port(port)
-                    .build();
             ChannelFuture channelFuture = client.startup(host);
 
             LOGGER.info("A new FPGA Mock Client is created, [{}:{}, iterator:{}, interval:{}]",
-                    host, port, iter, interval);
+                    host, port, count, interval);
 
-            for (long index = iter; index != 0; index--) {
+            for (long index = count; index != 0; index--) {
                 if (channelFuture.isSuccess()) {
                     channelFuture.channel()
                             .writeAndFlush(
@@ -44,7 +49,6 @@ public class ClientApp {
                 }
                 Thread.sleep(interval);
             }
-            client.shutdown();
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
         }
@@ -55,38 +59,21 @@ public class ClientApp {
         byte[] resultArray = new byte[12 + timeSampleSize * 2];
         ByteBuffer byteBuffer = ByteBuffer.wrap(resultArray);
 
-        short i1 = Double.valueOf(Math.random() * 1000).shortValue();
-        ByteBuffer channelId = ByteBuffer.allocate(2);
-        channelId.putShort(i1);
-        byteBuffer.put(channelId.array());
+        short channelId = (short) random.nextInt(1000);
+        byteBuffer.put(ByteBuffer.allocate(2).putShort(channelId).array());
 
-        short i2 = Double.valueOf(Math.random() * 224).shortValue();
-        ByteBuffer antennaId = ByteBuffer.allocate(2);
-        antennaId.putShort(i2);
-        byteBuffer.put(antennaId.array());
+        short antennaId = (short) random.nextInt(224);
+        byteBuffer.put(ByteBuffer.allocate(2).putShort(antennaId).array());
 
-        long longValue = Double.valueOf(Math.random() * Long.MAX_VALUE).longValue();
-        LOGGER.info("Sent channelId:{}, antennaId:{}, counter:{} ", i1, i2, longValue);
+        long counter = Math.abs(random.nextLong());
+        byteBuffer.put(ByteBuffer.allocate(8).putLong(counter).array());
 
-        ByteBuffer counter = ByteBuffer.allocate(8);
-        counter.putLong(longValue);
-        byteBuffer.put(counter.array());
+        LOGGER.info("Sent channelId:{}, antennaId:{}, counter:{} ", channelId, antennaId, counter);
 
         byte[] data = new byte[timeSampleSize * 2];
-        byte[] realArray = new byte[timeSampleSize];
-        byte[] imaginaryArray = new byte[timeSampleSize];
-        random.nextBytes(realArray);
-        random.nextBytes(imaginaryArray);
-
-
-        for (int i = 0; i < timeSampleSize * 2; i++) {
-            if (i % 2 == 0) {
-                data[i] = realArray[i / 2];
-            } else {
-                data[i] = imaginaryArray[i / 2];
-            }
-        }
+        random.nextBytes(data);
         byteBuffer.put(data);
+
         return resultArray;
     }
 }

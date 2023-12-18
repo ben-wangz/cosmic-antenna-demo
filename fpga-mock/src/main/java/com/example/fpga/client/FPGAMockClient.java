@@ -10,9 +10,12 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import lombok.Builder;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 
 @Builder
-public class FPGAMockClient {
+public class FPGAMockClient implements Closeable {
 
     int port;
     @Builder.Default
@@ -34,7 +37,8 @@ public class FPGAMockClient {
         }
     }
 
-    public void shutdown() {
+    @Override
+    public void close() throws IOException {
         workGroup.shutdownGracefully();
     }
 }
