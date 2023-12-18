@@ -14,7 +14,7 @@ public class ClientApp {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientApp.class);
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         LOGGER.info("Creating a new FPGA UDP Client");
 
@@ -49,8 +49,6 @@ public class ClientApp {
                 }
                 Thread.sleep(interval);
             }
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage());
         }
     }
 
