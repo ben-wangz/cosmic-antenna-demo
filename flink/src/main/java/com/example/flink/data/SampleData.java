@@ -26,7 +26,9 @@ public class SampleData implements Serializable {
     private Integer channelId;
     private Integer antennaId;
     private Long startCounter;
+    @ToString.Exclude
     private byte[] realArray;
+    @ToString.Exclude
     private byte[] imaginaryArray;
 
     @Jacksonized
@@ -35,8 +37,8 @@ public class SampleData implements Serializable {
             @NonNull Integer channelId,
             @NonNull Integer antennaId,
             @NonNull Long startCounter,
-            @NonNull byte[] realArray,
-            @NonNull byte[] imaginaryArray) {
+            byte @NonNull [] realArray,
+            byte @NonNull [] imaginaryArray) {
         this.channelId = channelId;
         this.antennaId = antennaId;
         this.startCounter = startCounter;
