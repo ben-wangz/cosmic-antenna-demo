@@ -33,10 +33,10 @@ public class SampleDataHandler extends SimpleChannelInboundHandler<byte[]> {
 
         ByteBuffer realArray = ByteBuffer.wrap(new byte[timeSampleSize]);
         ByteBuffer imaginaryArray = ByteBuffer.wrap(new byte[timeSampleSize]);
-        for (int i = 12; i < bytes.length; i++){
-            if (i % 2 == 0){
+        for (int i = 12; i < bytes.length; i++) {
+            if (i % 2 == 0) {
                 realArray.put(bytes[i]);
-            }else {
+            } else {
                 imaginaryArray.put(bytes[i]);
             }
         }

@@ -28,26 +28,26 @@ public class SensorApp {
 	public static void main(String[] args) throws Exception {
 		// read configuration from environment variables
 		int timeSampleSize = Optional.ofNullable(System.getenv("TIME_SAMPLE_SIZE"))
-				.map(envString -> Integer.parseInt(envString))
+				.map(Integer::parseInt)
 				.orElse(2048);
 		int timeSampleUnitSize = Optional.ofNullable(System.getenv("TIME_SAMPLE_UNIT_SIZE"))
-				.map(envString -> Integer.parseInt(envString))
+				.map(Integer::parseInt)
 				.orElse(64);
 		Preconditions.checkArgument(
 				0 == timeSampleSize % timeSampleUnitSize,
 				"timeSampleSize (%s) should be divisible by timeSampleUnitSize(%s)",
 				timeSampleSize, timeSampleUnitSize);
 		int antennaSize = Optional.ofNullable(System.getenv("ANTENNA_SIZE"))
-				.map(envString -> Integer.parseInt(envString))
+				.map(Integer::parseInt)
 				.orElse(224);
 		long startCounter = Optional.ofNullable(System.getenv("START_COUNTER"))
-				.map(envString -> Long.parseLong(envString))
+				.map(Long::parseLong)
 				.orElse(0L);
 		long sleepTimeInterval = Optional.ofNullable(System.getenv("SLEEP_TIME_INTERVAL"))
-				.map(envString -> Long.parseLong(envString))
+				.map(Long::parseLong)
 				.orElse(1000L);
 		int UDPPackageSize = Optional.ofNullable(System.getenv("FPGA_PACKAGE_SIZE"))
-				.map(envString -> Integer.parseInt(envString))
+				.map(Integer::parseInt)
 				.orElse(8192);
 		// configure flink environment
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(
