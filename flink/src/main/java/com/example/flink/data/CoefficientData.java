@@ -2,7 +2,11 @@ package com.example.flink.data;
 
 import com.google.common.base.Preconditions;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
 
 @Getter

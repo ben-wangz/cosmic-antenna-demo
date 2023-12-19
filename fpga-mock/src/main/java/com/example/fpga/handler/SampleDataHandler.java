@@ -1,20 +1,17 @@
 package com.example.fpga.handler;
 
-import io.netty.buffer.ByteBuf;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.Arrays;
-
 
 public class SampleDataHandler extends SimpleChannelInboundHandler<Object> {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(SampleDataHandler.class);
 
     @Override
@@ -27,5 +24,4 @@ public class SampleDataHandler extends SimpleChannelInboundHandler<Object> {
         LOGGER.info("Response channelId:{}, antennaId:{}, counter:{} ",
                 channelId.getShort(), antennaId.getShort(), counter.getLong());
     }
-
 }

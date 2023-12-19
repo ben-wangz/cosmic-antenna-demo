@@ -1,6 +1,10 @@
 package com.example.fpga.client;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 import com.example.fpga.handler.SampleDataHandler;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -10,13 +14,8 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import lombok.Builder;
 
-import java.io.Closeable;
-import java.io.IOException;
-
-
 @Builder
 public class FPGAMockClient implements Closeable {
-
     int port;
     @Builder.Default
     EventLoopGroup workGroup = new NioEventLoopGroup();
