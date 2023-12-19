@@ -16,6 +16,10 @@ public class CosmicAntennaConf {
             .key("cosmic.antenna.antennaSize")
             .intType()
             .defaultValue(224);
+    public static final ConfigOption<Integer> BEAM_SIZE = ConfigOptions
+            .key("cosmic.antenna.beamSize")
+            .intType()
+            .defaultValue(180);
     public static final ConfigOption<Long> START_COUNTER = ConfigOptions
             .key("cosmic.antenna.startCounter")
             .longType()
@@ -28,4 +32,8 @@ public class CosmicAntennaConf {
             .key("cosmic.antenna.fpga.package.size")
             .intType()
             .defaultValue(4108);
+    public static final ConfigOption<String> COEFFICIENT_DATA_PATH = ConfigOptions
+            .key("cosmic.antenna.coefficient.data.path")
+            .stringType()
+            .defaultValue("");
 }
