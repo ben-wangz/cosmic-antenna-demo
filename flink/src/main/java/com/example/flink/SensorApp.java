@@ -47,7 +47,7 @@ public class SensorApp {
 
     public static void main(String[] args) throws Exception {
         // generate random coefficient matrix
-//        Path tempFilePath = generateCoefficientMatrix();
+        Path tempFilePath = generateCoefficientMatrix();
 
         // read configuration from environment variables
         int timeSampleSize = Optional.ofNullable(System.getenv("TIME_SAMPLE_SIZE"))
@@ -85,7 +85,7 @@ public class SensorApp {
                         .set(CosmicAntennaConf.START_COUNTER, startCounter)
                         .set(CosmicAntennaConf.SLEEP_TIME_INTERVAL, sleepTimeInterval)
                         .set(CosmicAntennaConf.FPGA_PACKAGE_SIZE, UDPPackageSize)
-//                        .set(CosmicAntennaConf.COEFFICIENT_DATA_PATH, tempFilePath.toString())
+                        .set(CosmicAntennaConf.COEFFICIENT_DATA_PATH, tempFilePath.toString())
         );
         // configure watermark interval
         env.getConfig().setAutoWatermarkInterval(1000L);
@@ -144,8 +144,8 @@ public class SensorApp {
 
 
         env.execute("transform example of sensor reading");
-//        FileUtils.deleteFileOrDirectory(tempFilePath.toFile());
-//        LOGGER.info("deleted coefficient data temp file");
+        FileUtils.deleteFileOrDirectory(tempFilePath.toFile());
+        LOGGER.info("deleted coefficient data temp file");
     }
 
     private static Path generateCoefficientMatrix() throws IOException {
