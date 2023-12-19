@@ -4,24 +4,29 @@ import com.example.flink.data.BeamData;
 import com.example.flink.data.CoefficientData;
 import com.example.flink.data.SampleData;
 import com.example.flink.data.SensorReading;
+import com.example.flink.operation.GroupByBeam;
 import com.example.flink.operation.MultiplyWithCoefficient;
 import com.example.flink.sink.SensorSink;
 import com.example.flink.source.ServerSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.FileUtils;
+import org.apache.flink.util.OutputTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +47,7 @@ public class SensorApp {
 
     public static void main(String[] args) throws Exception {
         // generate random coefficient matrix
-        Path tempFilePath = generateCoefficientMatrix();
+//        Path tempFilePath = generateCoefficientMatrix();
 
         // read configuration from environment variables
         int timeSampleSize = Optional.ofNullable(System.getenv("TIME_SAMPLE_SIZE"))
@@ -67,6 +72,10 @@ public class SensorApp {
         int UDPPackageSize = Optional.ofNullable(System.getenv("FPGA_PACKAGE_SIZE"))
                 .map(Integer::parseInt)
                 .orElse(8192);
+        int algoSize = 3;
+        List<OutputTag<BeamData>> outputTagList = IntStream.range(0, algoSize).boxed().map(i -> {
+            return new OutputTag<BeamData>(RandomStringUtils.randomAlphabetic(10) + i){};
+        }).collect(Collectors.toList());
         // configure flink environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(
                 new Configuration()
@@ -76,7 +85,7 @@ public class SensorApp {
                         .set(CosmicAntennaConf.START_COUNTER, startCounter)
                         .set(CosmicAntennaConf.SLEEP_TIME_INTERVAL, sleepTimeInterval)
                         .set(CosmicAntennaConf.FPGA_PACKAGE_SIZE, UDPPackageSize)
-                        .set(CosmicAntennaConf.COEFFICIENT_DATA_PATH, tempFilePath.toString())
+//                        .set(CosmicAntennaConf.COEFFICIENT_DATA_PATH, tempFilePath.toString())
         );
         // configure watermark interval
         env.getConfig().setAutoWatermarkInterval(1000L);
@@ -88,7 +97,7 @@ public class SensorApp {
                                 .<SampleData>forBoundedOutOfOrderness(Duration.ofMillis(timeSampleUnitSize * 10))
                                 .withTimestampAssigner((sampleData, timestamp) -> sampleData.getStartCounter()));
 
-        DataStream<SensorReading> transformedReadingStream = sensorReadingStream
+        SingleOutputStreamOperator<BeamData> outputStreamOperator = sensorReadingStream
                 .flatMap(new FlatMapFunction<SampleData, SampleData>() {
                     @Override
                     public void flatMap(SampleData sampleData, Collector<SampleData> collector) throws Exception {
@@ -118,32 +127,25 @@ public class SensorApp {
                 .window(SlidingEventTimeWindows.of(
                         Time.milliseconds(timeSampleUnitSize),
                         Time.milliseconds(timeSampleUnitSize)))
-                .process(new ProcessWindowFunction<BeamData, BeamData, Integer, TimeWindow>() {
-
+                .process(new GroupByBeam())
+                .process(new ProcessFunction<BeamData, BeamData>() {
                     @Override
-                    public void process(Integer integer,
-                                        ProcessWindowFunction<BeamData, BeamData, Integer, TimeWindow>.Context context,
-                                        Iterable<BeamData> elements, Collector<BeamData> out) throws Exception {
-                        for (BeamData beamData : elements) {
-                            out.collect(beamData);
-                        }
+                    public void processElement(BeamData value, ProcessFunction<BeamData, BeamData>.Context context, Collector<BeamData> out) throws Exception {
+                        outputTagList.forEach(tag -> {
+                            context.output(tag, value);
+                        });
                     }
-                }).flatMap(new FlatMapFunction<BeamData, SensorReading>() {
-                    @Override
-                    public void flatMap(BeamData beamData, Collector<SensorReading> collector) throws Exception {
-                        for (int index = 0; index < beamData.getResultArray().length; index++) {
-                            collector.collect(SensorReading.builder()
-                                    .channelId(beamData.getChannelId())
-                                    .real(beamData.getResultArray()[index])
-                                    .build());
-                        }
-                    }
-                }).returns(Types.POJO(SensorReading.class));
+                });
 
-        transformedReadingStream.addSink(SensorSink.builder().build());
+        //invoke Algo
+        outputTagList.forEach(tag -> {
+            outputStreamOperator.getSideOutput(tag).print(tag.toString() + "_stream");
+        });
+
+
         env.execute("transform example of sensor reading");
-        FileUtils.deleteFileOrDirectory(tempFilePath.toFile());
-        LOGGER.info("deleted coefficient data temp file");
+//        FileUtils.deleteFileOrDirectory(tempFilePath.toFile());
+//        LOGGER.info("deleted coefficient data temp file");
     }
 
     private static Path generateCoefficientMatrix() throws IOException {
