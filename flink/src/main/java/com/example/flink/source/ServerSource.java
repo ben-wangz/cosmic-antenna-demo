@@ -1,14 +1,18 @@
 package com.example.flink.source;
 
-import com.example.flink.CosmicAntennaConf;
-import com.example.flink.data.SampleData;
-import com.example.flink.source.handler.MessageDecoder;
-import com.example.flink.source.handler.SampleDataHandler;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import java.net.InetSocketAddress;
+import java.util.List;
+
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.shaded.netty4.io.netty.bootstrap.Bootstrap;
-import org.apache.flink.shaded.netty4.io.netty.channel.*;
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelFuture;
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelHandlerContext;
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelId;
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelInitializer;
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelOption;
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelPipeline;
+import org.apache.flink.shaded.netty4.io.netty.channel.EventLoopGroup;
+import org.apache.flink.shaded.netty4.io.netty.channel.FixedRecvByteBufAllocator;
 import org.apache.flink.shaded.netty4.io.netty.channel.group.ChannelGroup;
 import org.apache.flink.shaded.netty4.io.netty.channel.group.DefaultChannelGroup;
 import org.apache.flink.shaded.netty4.io.netty.channel.nio.NioEventLoopGroup;
@@ -20,27 +24,24 @@ import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunctio
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
-import java.util.List;
+import com.example.flink.CosmicAntennaConf;
+import com.example.flink.data.SampleData;
+import com.example.flink.source.handler.MessageDecoder;
+import com.example.flink.source.handler.SampleDataHandler;
+
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @EqualsAndHashCode(callSuper = true)
 @ToString
 public class ServerSource extends RichParallelSourceFunction<SampleData> {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerSource.class);
-
     private static final String BLOCK_HANDLER = "BLOCK-HANDLER";
-
     private static final String DECODER_IDENTIFIER = "sample-data-decoder";
-
     private static final String BYTE_DATA_HANDLER_IDENTIFIER = "byte-data-handler";
-
     private EventLoopGroup eventLoopGroup;
-
     private ChannelGroup defaultChannelGroup;
-
     private ChannelId defaultChannelId;
-
     private int timeSampleSize;
 
     @Override
@@ -48,7 +49,6 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
         timeSampleSize = configuration.get(CosmicAntennaConf.TIME_SAMPLE_SIZE);
         eventLoopGroup = new NioEventLoopGroup();
         defaultChannelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-
         Bootstrap serverBootstrap = new Bootstrap();
         serverBootstrap.group(eventLoopGroup)
                 .channel(NioDatagramChannel.class)
@@ -56,7 +56,6 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
                 .option(ChannelOption.RCVBUF_ALLOCATOR,
                         new FixedRecvByteBufAllocator(configuration.get(CosmicAntennaConf.FPGA_PACKAGE_SIZE)))
                 .option(ChannelOption.SO_BROADCAST, true);
-
         serverBootstrap.handler(new ChannelInitializer<DatagramChannel>() {
             @Override
             protected void initChannel(DatagramChannel datagramChannel) throws Exception {
@@ -69,35 +68,30 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
                 });
             }
         });
-
         ChannelFuture channelFuture = serverBootstrap
                 .bind(0)
                 .sync();
-        LOGGER.info("inner netty server started at {}", ((InetSocketAddress) channelFuture.channel().localAddress()).getPort());
+        LOGGER.info("inner netty server started at {}",
+                ((InetSocketAddress) channelFuture.channel().localAddress()).getPort());
 
         defaultChannelId = channelFuture.channel().id();
         defaultChannelGroup.add(channelFuture.channel());
-
     }
 
     @Override
     public void run(SourceContext<SampleData> sourceContext) throws Exception {
         ChannelPipeline channelPipeline = defaultChannelGroup.find(defaultChannelId).pipeline();
-
         channelPipeline.remove(BLOCK_HANDLER);
         LOGGER.info("inner netty server unregistered the blocking handler");
-
         channelPipeline.addLast(DECODER_IDENTIFIER, MessageDecoder.builder()
                 .timeSampleSize(timeSampleSize)
                 .build());
         LOGGER.info("inner netty server registered \"{}\"", DECODER_IDENTIFIER);
-
         channelPipeline.addLast(BYTE_DATA_HANDLER_IDENTIFIER, SampleDataHandler.builder()
                 .sourceContext(sourceContext)
                 .timeSampleSize(timeSampleSize)
                 .build());
         LOGGER.info("inner netty server registered \"{}\"", BYTE_DATA_HANDLER_IDENTIFIER);
-
         Thread.currentThread().join();
     }
 
@@ -110,5 +104,4 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
             eventLoopGroup.shutdownGracefully();
         }
     }
-
 }

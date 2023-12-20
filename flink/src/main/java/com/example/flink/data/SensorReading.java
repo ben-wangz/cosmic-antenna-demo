@@ -1,7 +1,6 @@
 package com.example.flink.data;
 
 import java.io.Serializable;
-
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

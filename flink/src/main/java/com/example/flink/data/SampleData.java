@@ -1,5 +1,7 @@
 package com.example.flink.data;
 
+import java.io.Serializable;
+
 import com.google.common.base.Preconditions;
 
 import lombok.Builder;
@@ -11,18 +13,13 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
 
-import java.io.Serializable;
-import java.net.InetSocketAddress;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode
 @ToString
 public class SampleData implements Serializable {
-
     private static final long serialVersionUID = 3791844431556452626L;
-
     private Integer channelId;
     private Integer antennaId;
     private Long startCounter;
