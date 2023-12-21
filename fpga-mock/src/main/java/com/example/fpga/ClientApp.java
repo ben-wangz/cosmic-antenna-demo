@@ -21,16 +21,16 @@ public class ClientApp {
                                 .orElse("127.0.0.1");
                 int port = Optional.ofNullable(System.getenv("FPGA_CLIENT_PORT"))
                                 .map(Integer::parseInt)
-                                .orElse(53060);
+                                .orElse(50330);
                 int count = Optional.ofNullable(System.getenv("RECORD_COUNT"))
                                 .map(Integer::parseInt)
                                 .orElse(-1);
                 int interval = Optional.ofNullable(System.getenv("RECORD_INTERVAL"))
                                 .map(Integer::parseInt)
                                 .orElse(3000);
-                int timeSampleSize = Optional.ofNullable(System.getenv("TIME_SAMPLE_SIZE"))
+                int dataChunkSize = Optional.ofNullable(System.getenv("DATA_CHUNK_SIZE"))
                                 .map(Integer::parseInt)
-                                .orElse(2048);
+                                .orElse(4000);
                 try (FPGAMockClient client = FPGAMockClient.builder().port(port).build()) {
                         ChannelFuture channelFuture = client.startup(host);
                         LOGGER.info("A new FPGA Mock Client is created, [{}:{}, iterator:{}, interval:{}]",
@@ -40,30 +40,31 @@ public class ClientApp {
                                         channelFuture.channel()
                                                         .writeAndFlush(
                                                                         Unpooled.wrappedBuffer(
-                                                                                        randomRecord(timeSampleSize)));
+                                                                                        randomRecord(dataChunkSize)));
                                 }
                                 Thread.sleep(interval);
                         }
                 }
         }
 
-        private static byte[] randomRecord(int timeSampleSize) {
+        private static byte[] randomRecord(int dataChunkSize) {
                 Random random = new Random();
-                byte[] resultArray = new byte[12 + timeSampleSize * 2];
+                byte[] resultArray = new byte[8 + dataChunkSize * 2];
                 ByteBuffer byteBuffer = ByteBuffer.wrap(resultArray);
 
-                short channelId = (short) random.nextInt(1000);
-                byteBuffer.put(ByteBuffer.allocate(2).putShort(channelId).array());
+                byte antennaId = (byte) random.nextInt(224);
+                byteBuffer.put(ByteBuffer.allocate(1).put(antennaId).array());
 
-                short antennaId = (short) random.nextInt(224);
-                byteBuffer.put(ByteBuffer.allocate(2).putShort(antennaId).array());
+                byte[] counter = new byte[7];
+                random.nextBytes(counter);
+                byteBuffer.put(counter);
 
-                long counter = Math.abs(random.nextLong());
-                byteBuffer.put(ByteBuffer.allocate(8).putLong(counter).array());
+                byte[] paddedCounter = new byte[8];
+                System.arraycopy(counter, 0, paddedCounter, 0, counter.length);
 
-                LOGGER.info("Sent channelId:{}, antennaId:{}, counter:{} ", channelId, antennaId, counter);
+                LOGGER.info("Sent antennaId:{}, counter:{}, size of array: {} ", antennaId, ByteBuffer.wrap(paddedCounter).getLong(), dataChunkSize);
 
-                byte[] data = new byte[timeSampleSize * 2];
+                byte[] data = new byte[dataChunkSize * 2];
                 random.nextBytes(data);
                 byteBuffer.put(data);
 

@@ -3,7 +3,7 @@ package com.example.flink.source;
 import com.example.flink.CosmicAntennaConf;
 import com.example.flink.data.SampleData;
 import com.example.flink.source.handler.MessageDecoder;
-import com.example.flink.source.handler.SampleDataHandler;
+import com.example.flink.source.handler.SampleDataV2Handler;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.flink.configuration.Configuration;
@@ -25,8 +25,8 @@ import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @ToString
-public class ServerSource extends RichParallelSourceFunction<SampleData> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServerSource.class);
+public class ServerV2Source extends RichParallelSourceFunction<SampleData> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServerV2Source.class);
     private static final String BLOCK_HANDLER = "BLOCK-HANDLER";
     private static final String DECODER_IDENTIFIER = "sample-data-decoder";
     private static final String BYTE_DATA_HANDLER_IDENTIFIER = "byte-data-handler";
@@ -63,7 +63,7 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
             }
         });
         ChannelFuture channelFuture = serverBootstrap
-                .bind(0)
+                .bind(50330)
                 .sync();
         LOGGER.info("inner netty server started at {}",
                 ((InetSocketAddress) channelFuture.channel().localAddress()).getPort());
@@ -82,7 +82,7 @@ public class ServerSource extends RichParallelSourceFunction<SampleData> {
                 .dataChunkSize(dataChunkSize)
                 .build());
         LOGGER.info("inner netty server registered \"{}\"", DECODER_IDENTIFIER);
-        channelPipeline.addLast(BYTE_DATA_HANDLER_IDENTIFIER, SampleDataHandler.builder()
+        channelPipeline.addLast(BYTE_DATA_HANDLER_IDENTIFIER, SampleDataV2Handler.builder()
                 .sourceContext(sourceContext)
                 .dataChunkSize(dataChunkSize)
                 .build());

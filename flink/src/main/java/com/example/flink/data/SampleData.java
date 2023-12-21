@@ -31,7 +31,7 @@ public class SampleData implements Serializable {
     @Jacksonized
     @Builder(toBuilder = true)
     public SampleData(
-            @NonNull Integer channelId,
+            Integer channelId,
             @NonNull Integer antennaId,
             @NonNull Long startCounter,
             byte @NonNull [] realArray,
