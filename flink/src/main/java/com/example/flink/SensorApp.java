@@ -3,25 +3,26 @@ package com.example.flink;
 import com.example.flink.data.BeamData;
 import com.example.flink.data.CoefficientData;
 import com.example.flink.data.SampleData;
-import com.example.flink.data.SensorReading;
+import com.example.flink.operation.GroupByBeam;
 import com.example.flink.operation.MultiplyWithCoefficient;
 import com.example.flink.sink.SensorSink;
 import com.example.flink.source.ServerV2Source;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
+import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.FileUtils;
+import org.apache.flink.util.OutputTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,12 +38,13 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class SensorApp {
-        private static final Logger LOGGER = LoggerFactory.getLogger(SensorApp.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SensorApp.class);
 
         public static void main(String[] args) throws Exception {
                 // generate random coefficient matrix
                 Path tempFilePath = generateCoefficientMatrix();
                 int channelSize = 100;
+                int algoSize = 3;
                 int dataChunkSize = Optional.ofNullable(System.getenv("DATA_CHUNK_SIZE"))
                         .map(Integer::parseInt)
                         .orElse(4000);
@@ -66,6 +68,10 @@ public class SensorApp {
                 int UDPPackageSize = Optional.ofNullable(System.getenv("FPGA_PACKAGE_SIZE"))
                                 .map(Integer::parseInt)
                                 .orElse(8192);
+                List<OutputTag<BeamData>> outputTagList = IntStream.range(0, algoSize).boxed().map(i -> {
+                    return new OutputTag<BeamData>(RandomStringUtils.randomAlphabetic(10) + i) {
+                    };
+                }).collect(Collectors.toList());
                 // configure flink environment
                 StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(
                                 new Configuration()
@@ -102,7 +108,7 @@ public class SensorApp {
                                 }
                         }).keyBy(SampleData::getChannelId);
 
-                DataStream<SensorReading> transformedReadingStream = sensorReadingStream
+            SingleOutputStreamOperator<BeamData> outputStreamOperator = sensorReadingStream
                                 .flatMap(new FlatMapFunction<SampleData, SampleData>() {
                                         @Override
                                         public void flatMap(SampleData sampleData, Collector<SampleData> collector)
@@ -136,54 +142,45 @@ public class SensorApp {
                                 .window(SlidingEventTimeWindows.of(
                                                 Time.milliseconds(timeSampleUnitSize),
                                                 Time.milliseconds(timeSampleUnitSize)))
-                                .process(new ProcessWindowFunction<BeamData, BeamData, Integer, TimeWindow>() {
-                                        @Override
-                                        public void process(Integer integer,
-                                                        ProcessWindowFunction<BeamData, BeamData, Integer, TimeWindow>.Context context,
-                                                        Iterable<BeamData> elements, Collector<BeamData> out)
-                                                        throws Exception {
-                                                for (BeamData beamData : elements) {
-                                                        out.collect(beamData);
-                                                }
-                                        }
-                                }).flatMap(new FlatMapFunction<BeamData, SensorReading>() {
-                                        @Override
-                                        public void flatMap(BeamData beamData, Collector<SensorReading> collector)
-                                                        throws Exception {
-                                                for (int index = 0; index < beamData.getResultArray().length; index++) {
-                                                        collector.collect(SensorReading.builder()
-                                                                        .channelId(beamData.getChannelId())
-                                                                        .real(beamData.getResultArray()[index])
-                                                                        .build());
-                                                }
-                                        }
-                                }).returns(Types.POJO(SensorReading.class));
-                transformedReadingStream.addSink(SensorSink.builder().build());
+                    .process(new GroupByBeam())
+                    .process(new ProcessFunction<BeamData, BeamData>() {
+                        @Override
+                        public void processElement(BeamData value,
+                                                   ProcessFunction<BeamData, BeamData>.Context context,
+                                                   Collector<BeamData> out) throws Exception {
+                            outputTagList.forEach(tag -> {
+                                context.output(tag, value);
+                            });
+                        }
+                    });
+
+                outputTagList.forEach(tag -> {
+                    outputStreamOperator.getSideOutput(tag).print(tag.toString() + "_stream");
+                });
                 env.execute("transform example of sensor reading");
                 FileUtils.deleteFileOrDirectory(tempFilePath.toFile());
                 LOGGER.info("deleted coefficient data temp file");
         }
 
-        private static Path generateCoefficientMatrix() throws IOException {
-                ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-                Path tempFile = Files.createTempFile("coefficient-", ".json");
-                LOGGER.info("coefficient data saved in -> {}", tempFile.toString());
-                Random random = new Random(666);
+    private static Path generateCoefficientMatrix() throws IOException {
+        ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+        Path tempFile = Files.createTempFile("coefficient-", ".json");
+        LOGGER.info("coefficient data saved in -> {}", tempFile.toString());
+        Random random = new Random(666);
 
-                List<CoefficientData> coefficientDataList = IntStream.range(0, 1000).boxed().map(channelId -> {
-                        byte[] realArray = new byte[224 * 180];
-                        byte[] imaginaryArray = new byte[224 * 180];
-                        random.nextBytes(realArray);
-                        random.nextBytes(imaginaryArray);
-                        return CoefficientData.builder()
-                                        .channelId(channelId)
-                                        .realArray(realArray)
-                                        .imaginaryArray(imaginaryArray)
-                                        .build();
-                }).collect(Collectors.toList());
+        List<CoefficientData> coefficientDataList = IntStream.range(0, 1000).boxed().map(channelId -> {
+            byte[] realArray = new byte[224 * 180];
+            byte[] imaginaryArray = new byte[224 * 180];
+            random.nextBytes(realArray);
+            random.nextBytes(imaginaryArray);
+            return CoefficientData.builder().channelId(channelId)
+                    .realArray(realArray)
+                    .imaginaryArray(imaginaryArray).build();
+        }).collect(Collectors.toList());
 
-                FileUtils.writeFileUtf8(tempFile.toFile(), OBJECT_MAPPER.writeValueAsString(coefficientDataList));
-                return tempFile;
-        }
+        FileUtils.writeFileUtf8(tempFile.toFile(),
+                OBJECT_MAPPER.writeValueAsString(coefficientDataList));
+        return tempFile;
+    }
 
 }
