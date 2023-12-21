@@ -6,7 +6,7 @@ import com.example.flink.data.SampleData;
 import com.example.flink.data.SensorReading;
 import com.example.flink.operation.MultiplyWithCoefficient;
 import com.example.flink.sink.SensorSink;
-import com.example.flink.source.ServerSource;
+import com.example.flink.source.ServerV2Source;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -41,17 +42,18 @@ public class SensorApp {
         public static void main(String[] args) throws Exception {
                 // generate random coefficient matrix
                 Path tempFilePath = generateCoefficientMatrix();
+                int channelSize = 100;
+                int dataChunkSize = Optional.ofNullable(System.getenv("DATA_CHUNK_SIZE"))
+                        .map(Integer::parseInt)
+                        .orElse(4000);
                 // read configuration from environment variables
-                int timeSampleSize = Optional.ofNullable(System.getenv("TIME_SAMPLE_SIZE"))
-                                .map(Integer::parseInt)
-                                .orElse(2048);
                 int timeSampleUnitSize = Optional.ofNullable(System.getenv("TIME_SAMPLE_UNIT_SIZE"))
                                 .map(Integer::parseInt)
-                                .orElse(64);
+                                .orElse(40);
                 Preconditions.checkArgument(
-                                0 == timeSampleSize % timeSampleUnitSize,
-                                "timeSampleSize (%s) should be divisible by timeSampleUnitSize(%s)",
-                                timeSampleSize, timeSampleUnitSize);
+                                0 == dataChunkSize / channelSize % timeSampleUnitSize,
+                                "dataChunkSize (%s) should be divisible by timeSampleUnitSize(%s)",
+                                dataChunkSize, timeSampleUnitSize);
                 int antennaSize = Optional.ofNullable(System.getenv("ANTENNA_SIZE"))
                                 .map(Integer::parseInt)
                                 .orElse(224);
@@ -67,7 +69,6 @@ public class SensorApp {
                 // configure flink environment
                 StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(
                                 new Configuration()
-                                                .set(CosmicAntennaConf.TIME_SAMPLE_SIZE, timeSampleSize)
                                                 .set(CosmicAntennaConf.TIME_SAMPLE_UNIT_SIZE, timeSampleUnitSize)
                                                 .set(CosmicAntennaConf.ANTENNA_SIZE, antennaSize)
                                                 .set(CosmicAntennaConf.START_COUNTER, startCounter)
@@ -75,24 +76,38 @@ public class SensorApp {
                                                 .set(CosmicAntennaConf.FPGA_PACKAGE_SIZE, UDPPackageSize)
                                                 .set(CosmicAntennaConf.COEFFICIENT_DATA_PATH, tempFilePath.toString()));
                 // configure watermark interval
-                env.getConfig().setAutoWatermarkInterval(1000L);
+                env.getConfig().setAutoWatermarkInterval(20000L);
                 DataStream<SampleData> sensorReadingStream = env
-                                .addSource(new ServerSource())
+                                .addSource(new ServerV2Source())
                                 .setParallelism(1)
                                 .assignTimestampsAndWatermarks(
                                                 WatermarkStrategy
                                                                 .<SampleData>forBoundedOutOfOrderness(Duration
-                                                                                .ofMillis(timeSampleUnitSize * 10))
+                                                                                .ofMillis(timeSampleUnitSize * 100000))
                                                                 .withTimestampAssigner(
                                                                                 (sampleData, timestamp) -> sampleData
-                                                                                                .getStartCounter()));
+                                                                                                .getStartCounter()))
+                        .flatMap(new FlatMapFunction<SampleData, SampleData>() {
+                                @Override
+                                public void flatMap(SampleData sampleData, Collector<SampleData> collector) throws Exception {
+                                        IntStream.range(0, channelSize).boxed().forEach(index -> {
+                                                collector.collect(SampleData.builder()
+                                                                .channelId(index)
+                                                                .antennaId(sampleData.getAntennaId())
+                                                                .startCounter(sampleData.getStartCounter())
+                                                                .realArray(Arrays.copyOfRange(sampleData.getRealArray(), index, index + (dataChunkSize / channelSize)))
+                                                                .imaginaryArray(Arrays.copyOfRange(sampleData.getImaginaryArray(), index, index + (dataChunkSize / channelSize)))
+                                                        .build());
+                                        });
+                                }
+                        }).keyBy(SampleData::getChannelId);
 
                 DataStream<SensorReading> transformedReadingStream = sensorReadingStream
                                 .flatMap(new FlatMapFunction<SampleData, SampleData>() {
                                         @Override
                                         public void flatMap(SampleData sampleData, Collector<SampleData> collector)
                                                         throws Exception {
-                                                int splitSize = timeSampleSize / timeSampleUnitSize;
+                                                int splitSize = sampleData.getRealArray().length / timeSampleUnitSize;
                                                 for (int index = 0; index < splitSize; index++) {
                                                         byte[] realArray = new byte[timeSampleUnitSize];
                                                         byte[] imaginaryArray = new byte[timeSampleUnitSize];
