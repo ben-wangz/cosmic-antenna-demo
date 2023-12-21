@@ -5,7 +5,6 @@ import com.example.flink.data.CoefficientData;
 import com.example.flink.data.SampleData;
 import com.example.flink.operation.GroupByBeam;
 import com.example.flink.operation.MultiplyWithCoefficient;
-import com.example.flink.sink.SensorSink;
 import com.example.flink.source.ServerV2Source;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
