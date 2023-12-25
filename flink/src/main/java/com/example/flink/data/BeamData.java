@@ -16,19 +16,16 @@ import lombok.extern.jackson.Jacksonized;
 @ToString
 public class BeamData {
 
-    private Integer channelId;
-    private Integer beamId;
-    @ToString.Exclude
-    private byte[] resultArray;
+  private Integer channelId;
+  private Integer beamId;
+  @ToString.Exclude private byte[] resultArray;
 
-    @Builder
-    @Jacksonized
-    public BeamData(
-            @NonNull Integer channelId,
-            @NonNull Integer beamId,
-            byte @NonNull [] resultArray) {
-        this.channelId = channelId;
-        this.beamId = beamId;
-        this.resultArray = resultArray;
-    }
+  @Builder
+  @Jacksonized
+  public BeamData(
+      @NonNull Integer channelId, @NonNull Integer beamId, byte @NonNull [] resultArray) {
+    this.channelId = channelId;
+    this.beamId = beamId;
+    this.resultArray = resultArray;
+  }
 }

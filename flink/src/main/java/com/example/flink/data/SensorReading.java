@@ -15,32 +15,28 @@ import lombok.extern.jackson.Jacksonized;
 @EqualsAndHashCode
 @ToString
 public class SensorReading implements Serializable {
-    private Integer antennaId;
-    private Integer channelId;
-    private Long counter;
-    private byte real;
-    private byte imaginary;
+  private Integer antennaId;
+  private Integer channelId;
+  private Long counter;
+  private byte real;
+  private byte imaginary;
 
-    @Builder(toBuilder = true)
-    @Jacksonized
-    public SensorReading(
-            Integer antennaId,
-            Integer channelId,
-            Long counter,
-            byte real,
-            byte imaginary) {
-        this.antennaId = antennaId;
-        this.channelId = channelId;
-        this.counter = counter;
-        this.real = real;
-        this.imaginary = imaginary;
-    }
+  @Builder(toBuilder = true)
+  @Jacksonized
+  public SensorReading(
+      Integer antennaId, Integer channelId, Long counter, byte real, byte imaginary) {
+    this.antennaId = antennaId;
+    this.channelId = channelId;
+    this.counter = counter;
+    this.real = real;
+    this.imaginary = imaginary;
+  }
 
-    public Integer real() {
-        return real & 0xff;
-    }
+  public Integer real() {
+    return real & 0xff;
+  }
 
-    public Integer imaginary() {
-        return imaginary & 0xff;
-    }
+  public Integer imaginary() {
+    return imaginary & 0xff;
+  }
 }
