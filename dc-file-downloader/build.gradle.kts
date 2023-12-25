@@ -16,7 +16,7 @@ repositories {
 }
 
 application{
-    mainClass.set("com.example.fpga.ClientApp")
+    mainClass.set("com.example.distributed.consensus.Downloader")
 }
 
 val lombokDependency = "org.projectlombok:lombok:1.18.22"

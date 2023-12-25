@@ -29,15 +29,17 @@ public class Downloader {
     private static final Integer timeout = 1000 * 60 * 2;
 
     public static void main(String[] args) throws Exception {
-        LOGGER.info("current working dir -> {}", WORKING_DIR.getAbsolutePath());
 
         String hostName = Optional.ofNullable(System.getenv("HOSTNAME")).orElse("ayayay");
         String endpoint = Optional.ofNullable(System.getenv("S3_ENDPOINT")).orElse("http://10.11.33.132:9000");
         String accessKey = Optional.ofNullable(System.getenv("S3_ACCESS_KEY")).orElse("minioadmin");
         String secretKey = Optional.ofNullable(System.getenv("S3_SECRET_KEY")).orElse("minioadmin");
         String bucket = Optional.ofNullable(System.getenv("DC_FILE_BUCKET")).orElse("filesystem");
-        String filePathInS3 = Optional.ofNullable(System.getenv("DC_FILE_PATH")).orElse("app.jar");
+        String filePathInS3 = Optional.ofNullable(System.getenv("DC_FILE_READ_PATH")).orElse("app.jar");
+        String targetFileSavePath = Optional.ofNullable(System.getenv("DC_FILE_SAVE_PATH")).orElse(WORKING_DIR.getAbsolutePath());
 
+        LOGGER.info("Retrieve hostname is {}", hostName);
+        LOGGER.info("Download file will be saved in {}", targetFileSavePath);
         LOGGER.info("Downloader will connect minio[{}@{}/{}]", accessKey, secretKey, endpoint);
         LOGGER.info("Downloader trying to retrieve file[{}] at bucket:{}", filePathInS3, bucket);
 
@@ -46,9 +48,9 @@ public class Downloader {
         String fileLockName = fileBaseName + ".lock";
         String fileTmpName = fileBaseName + ".tmp";
 
-        File targetFile = FileUtils.getFile(WORKING_DIR, fileFullName);
-        File lockFile = FileUtils.getFile(WORKING_DIR, fileLockName);
-        File tmpFile = FileUtils.getFile(WORKING_DIR, fileTmpName);
+        File targetFile = FileUtils.getFile(targetFileSavePath, fileFullName);
+        File lockFile = FileUtils.getFile(targetFileSavePath, fileLockName);
+        File tmpFile = FileUtils.getFile(targetFileSavePath, fileTmpName);
 
         LockFileContent lockFileContent = null;
         if (!targetFile.exists()) {
@@ -60,7 +62,7 @@ public class Downloader {
                             });
                     LOGGER.info("get lock file content -> {}", lockFileContent);
                 } else {
-                    lockFile = new File(WORKING_DIR, lockFile.getName());
+                    lockFile = new File(targetFileSavePath, lockFile.getName());
                     lockFileContent = LockFileContent.builder()
                             .hostName(hostName)
                             .created(System.currentTimeMillis())
@@ -101,7 +103,7 @@ public class Downloader {
                     .build();
 
 
-            tmpFile = tmpFile.exists() ? tmpFile : new File(WORKING_DIR, tmpFile.getName());
+            tmpFile = tmpFile.exists() ? tmpFile : new File(targetFileSavePath, tmpFile.getName());
             do {
                 LOGGER.info("start to download file[{}], tmp file size:{}", fileFullName, tmpFile.length());
                 try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile)) {
@@ -113,12 +115,12 @@ public class Downloader {
                 }
                 FileUtils.deleteQuietly(lockFile);
                 tmpFile.renameTo(targetFile);
-                LOGGER.error("renamed tmp file, download finished.");
+                LOGGER.info("renamed tmp file, download finished");
             } while (tmpFile.exists());
 
         }
 
-        LOGGER.info("file[{}] already saved in dir[{}].", fileFullName, WORKING_DIR.getAbsolutePath());
+        LOGGER.info("file[{}] already saved in dir[{}]", fileFullName, targetFileSavePath);
         System.exit(0);
     }
 
