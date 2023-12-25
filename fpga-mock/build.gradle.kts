@@ -15,7 +15,7 @@ repositories {
     mavenCentral()
 }
 
-application{
+application {
     mainClass.set("com.example.fpga.ClientApp")
 }
 
@@ -26,10 +26,10 @@ dependencies {
     annotationProcessor(lombokDependency)
     implementation("com.google.guava:guava:32.1.1-jre")
     implementation("io.netty:netty-all:4.1.101.Final")
-    implementation("org.slf4j:slf4j-api:${slf4jVersion}")
+    implementation("org.slf4j:slf4j-api:$slf4jVersion")
 
-    shadow("ch.qos.logback:logback-classic:${logbackVersion}")
-    shadow("ch.qos.logback:logback-core:${logbackVersion}")
+    shadow("ch.qos.logback:logback-classic:$logbackVersion")
+    shadow("ch.qos.logback:logback-core:$logbackVersion")
     shadow(lombokDependency)
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.3")
