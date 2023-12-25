@@ -10,20 +10,21 @@ import org.slf4j.LoggerFactory;
 
 public class GroupByBeam extends ProcessWindowFunction<BeamData, BeamData, Integer, TimeWindow> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(GroupByBeam.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(GroupByBeam.class);
 
-    @Override
-    public void open(Configuration configuration) throws Exception {
+  @Override
+  public void open(Configuration configuration) throws Exception {}
 
+  @Override
+  public void process(
+      Integer integer,
+      ProcessWindowFunction<BeamData, BeamData, Integer, TimeWindow>.Context context,
+      Iterable<BeamData> elements,
+      Collector<BeamData> out)
+      throws Exception {
+
+    for (BeamData beamData : elements) {
+      out.collect(beamData);
     }
-
-    @Override
-    public void process(Integer integer,
-            ProcessWindowFunction<BeamData, BeamData, Integer, TimeWindow>.Context context,
-            Iterable<BeamData> elements, Collector<BeamData> out) throws Exception {
-
-        for (BeamData beamData : elements) {
-            out.collect(beamData);
-        }
-    }
+  }
 }
