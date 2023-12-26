@@ -43,16 +43,6 @@ public class CosmicAntennaApp {
     // TODO separate coefficient matrix generation from main function
     // generate random coefficient matrix
     Path tempFilePath = generateCoefficientMatrix();
-    // read configuration from environment variables
-    List<OutputTag<ChannelBeamData>> outputTagList =
-        IntStream.range(0, 3)
-            .boxed()
-            .map(
-                index -> {
-                  return new OutputTag<ChannelBeamData>(
-                      RandomStringUtils.randomAlphabetic(10) + index) {};
-                })
-            .collect(Collectors.toList());
     Configuration configuration = CosmicAntennaConf.ConfigurationBuilder.build();
     int timeSampleSize = configuration.getInteger(CosmicAntennaConf.TIME_SAMPLE_SIZE);
     int timeSampleUnitSize = configuration.getInteger(CosmicAntennaConf.TIME_SAMPLE_UNIT_SIZE);
