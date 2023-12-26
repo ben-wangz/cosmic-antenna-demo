@@ -1,13 +1,15 @@
 package com.example.flink.source;
 
 import com.example.flink.CosmicAntennaConf;
-import com.example.flink.data.SampleData;
+import com.example.flink.data.AntennaData;
 import com.example.flink.source.handler.MessageDecoder;
-import com.example.flink.source.handler.SampleDataV2Handler;
+import com.example.flink.source.handler.SampleDataHandler;
+import com.google.common.base.Preconditions;
 import java.net.InetSocketAddress;
 import java.util.List;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.shaded.netty4.io.netty.bootstrap.Bootstrap;
 import org.apache.flink.shaded.netty4.io.netty.channel.*;
@@ -24,33 +26,39 @@ import org.slf4j.LoggerFactory;
 
 @EqualsAndHashCode(callSuper = true)
 @ToString
-public class ServerV2Source extends RichParallelSourceFunction<SampleData> {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ServerV2Source.class);
+public class FPGASource extends RichParallelSourceFunction<AntennaData> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(FPGASource.class);
   private static final String BLOCK_HANDLER = "BLOCK-HANDLER";
-  private static final String DECODER_IDENTIFIER = "sample-data-decoder";
-  private static final String BYTE_DATA_HANDLER_IDENTIFIER = "byte-data-handler";
-  private EventLoopGroup eventLoopGroup;
-  private ChannelGroup defaultChannelGroup;
-  private ChannelId defaultChannelId;
 
-  private int dataHeaderSize;
-  private int dataChunkSize;
+  private transient int packageHeaderSize;
+  private transient int packageDataSize;
+  private transient EventLoopGroup eventLoopGroup;
+  private transient ChannelGroup defaultChannelGroup;
+  private transient ChannelId defaultChannelId;
 
   @Override
   public void open(Configuration configuration) throws Exception {
-    dataHeaderSize = configuration.get(CosmicAntennaConf.DATA_HEADER_SIZE);
-    dataChunkSize = configuration.get(CosmicAntennaConf.DATA_CHUNK_SIZE);
+    GlobalJobParameters globalJobParameters =
+        getRuntimeContext().getExecutionConfig().getGlobalJobParameters();
+    Preconditions.checkArgument(
+        globalJobParameters instanceof Configuration,
+        "globalJobParameters(%s) is not instance of Configuration",
+        globalJobParameters.getClass());
+    packageHeaderSize = configuration.get(CosmicAntennaConf.PACKAGE_HEADER_SIZE);
+    int timeSampleSize = configuration.get(CosmicAntennaConf.TIME_SAMPLE_SIZE);
+    int channelSize = configuration.get(CosmicAntennaConf.CHANNEL_SIZE);
+    packageDataSize = timeSampleSize * channelSize * 2;
     eventLoopGroup = new NioEventLoopGroup();
     defaultChannelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-    Bootstrap serverBootstrap = new Bootstrap();
-    serverBootstrap
-        .group(eventLoopGroup)
-        .channel(NioDatagramChannel.class)
-        .option(ChannelOption.AUTO_CLOSE, true)
-        .option(
-            ChannelOption.RCVBUF_ALLOCATOR,
-            new FixedRecvByteBufAllocator(configuration.get(CosmicAntennaConf.FPGA_PACKAGE_SIZE)))
-        .option(ChannelOption.SO_BROADCAST, true);
+    Bootstrap serverBootstrap =
+        new Bootstrap()
+            .group(eventLoopGroup)
+            .channel(NioDatagramChannel.class)
+            .option(ChannelOption.AUTO_CLOSE, true)
+            .option(
+                ChannelOption.RCVBUF_ALLOCATOR,
+                new FixedRecvByteBufAllocator(packageDataSize + packageHeaderSize))
+            .option(ChannelOption.SO_BROADCAST, true);
     serverBootstrap.handler(
         new ChannelInitializer<DatagramChannel>() {
           @Override
@@ -67,7 +75,7 @@ public class ServerV2Source extends RichParallelSourceFunction<SampleData> {
                 });
           }
         });
-    ChannelFuture channelFuture = serverBootstrap.bind(50330).sync();
+    ChannelFuture channelFuture = serverBootstrap.bind(0).sync();
     LOGGER.info(
         "inner netty server started at {}",
         ((InetSocketAddress) channelFuture.channel().localAddress()).getPort());
@@ -77,24 +85,21 @@ public class ServerV2Source extends RichParallelSourceFunction<SampleData> {
   }
 
   @Override
-  public void run(SourceContext<SampleData> sourceContext) throws Exception {
+  public void run(SourceContext<AntennaData> sourceContext) throws Exception {
     ChannelPipeline channelPipeline = defaultChannelGroup.find(defaultChannelId).pipeline();
     channelPipeline.remove(BLOCK_HANDLER);
     LOGGER.info("inner netty server unregistered the blocking handler");
+    String decoderIdentifier = "sample-data-decoder";
     channelPipeline.addLast(
-        DECODER_IDENTIFIER,
-        MessageDecoder.builder()
-            .dataHeaderSize(dataHeaderSize)
-            .dataChunkSize(dataChunkSize)
-            .build());
-    LOGGER.info("inner netty server registered \"{}\"", DECODER_IDENTIFIER);
+        decoderIdentifier,
+        MessageDecoder.builder().headerSize(packageHeaderSize).dataSize(packageDataSize).build());
+    LOGGER.info("inner netty server registered \"{}\"", decoderIdentifier);
+    final String byteDataHandlerIdentifier = "byte-data-handler";
     channelPipeline.addLast(
-        BYTE_DATA_HANDLER_IDENTIFIER,
-        SampleDataV2Handler.builder()
-            .sourceContext(sourceContext)
-            .dataChunkSize(dataChunkSize)
-            .build());
-    LOGGER.info("inner netty server registered \"{}\"", BYTE_DATA_HANDLER_IDENTIFIER);
+        byteDataHandlerIdentifier,
+        SampleDataHandler.builder().sourceContext(sourceContext).dataSize(packageDataSize).build());
+    LOGGER.info("inner netty server registered \"{}\"", byteDataHandlerIdentifier);
+    // TODO block thread with another way
     Thread.currentThread().join();
   }
 

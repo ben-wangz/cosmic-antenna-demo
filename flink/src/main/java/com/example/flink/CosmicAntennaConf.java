@@ -1,27 +1,109 @@
 package com.example.flink;
 
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.shaded.guava30.com.google.common.base.Preconditions;
 
 public class CosmicAntennaConf {
-  public static final ConfigOption<Integer> DATA_CHUNK_SIZE =
-      ConfigOptions.key("cosmic.antenna.dataChunkSize").intType().defaultValue(4000);
-  public static final ConfigOption<Integer> DATA_HEADER_SIZE =
-      ConfigOptions.key("cosmic.antenna.dataHeaderSize").intType().defaultValue(8);
-  public static final ConfigOption<Integer> TIME_SAMPLE_UNIT_SIZE =
-      ConfigOptions.key("cosmic.antenna.timeSampleUnitSize").intType().defaultValue(8);
-  public static final ConfigOption<Integer> ANTENNA_SIZE =
-      ConfigOptions.key("cosmic.antenna.antennaSize").intType().defaultValue(224);
-  public static final ConfigOption<Integer> BEAM_SIZE =
-      ConfigOptions.key("cosmic.antenna.beamSize").intType().defaultValue(180);
-  public static final ConfigOption<Long> START_COUNTER =
-      ConfigOptions.key("cosmic.antenna.startCounter").longType().defaultValue(0L);
-  public static final ConfigOption<Long> SLEEP_TIME_INTERVAL =
-      ConfigOptions.key("cosmic.antenna.sleepTimeInterval").longType().defaultValue(1000L);
-  public static final ConfigOption<Integer> FPGA_PACKAGE_SIZE =
-      ConfigOptions.key("cosmic.antenna.fpga.package.size")
+  public static final ConfigOption<Integer> PACKAGE_HEADER_SIZE =
+      ConfigOptions.key("cosmic.antenna.dataHeaderSize")
           .intType()
-          .defaultValue(DATA_CHUNK_SIZE.defaultValue() * 2 + DATA_HEADER_SIZE.defaultValue());
+          .defaultValue(8)
+          .withDescription("data header length in one package from FPGA");
+  public static final ConfigOption<Integer> TIME_SAMPLE_SIZE =
+      ConfigOptions.key("cosmic.antenna.timeSampleSize")
+          .intType()
+          .defaultValue(8)
+          .withDescription("number of time samples in one package from FPGA");
+  public static final ConfigOption<Integer> CHANNEL_SIZE =
+      ConfigOptions.key("cosmic.antenna.channelSize")
+          .intType()
+          .defaultValue(1000)
+          .withDescription("number of channels in one package from FPGA");
+  public static final ConfigOption<Integer> ANTENNA_SIZE =
+      ConfigOptions.key("cosmic.antenna.antennaSize")
+          .intType()
+          .defaultValue(224)
+          .withDescription("number of antennas in one package from FPGA");
+  public static final ConfigOption<Integer> BEAM_SIZE =
+      ConfigOptions.key("cosmic.antenna.beamSize")
+          .intType()
+          .defaultValue(180)
+          .withDescription("number of beams in one package from FPGA");
+  public static final ConfigOption<Integer> TIME_SAMPLE_UNIT_SIZE =
+      ConfigOptions.key("cosmic.antenna.timeSampleUnitSize")
+          .intType()
+          .defaultValue(8)
+          .withDescription("minimum number of time samples in the whole system");
+  public static final ConfigOption<Integer> BEAM_FORMING_WINDOW_SIZE =
+      ConfigOptions.key("cosmic.antenna.beamFormingWindowSize")
+          .intType()
+          .defaultValue(10)
+          .withDescription("beam forming window size");
   public static final ConfigOption<String> COEFFICIENT_DATA_PATH =
-      ConfigOptions.key("cosmic.antenna.coefficient.data.path").stringType().defaultValue("");
+      ConfigOptions.key("cosmic.antenna.coefficient.data.path")
+          .stringType()
+          .defaultValue("coefficient/")
+          .withDescription("path to coefficient data file");
+
+  public static class ConfigurationBuilder {
+    public static Configuration build() {
+      return build(new Configuration());
+    }
+
+    public static Configuration build(Configuration configuration) {
+      Stream.of(
+              PACKAGE_HEADER_SIZE,
+              TIME_SAMPLE_SIZE,
+              CHANNEL_SIZE,
+              ANTENNA_SIZE,
+              BEAM_SIZE,
+              TIME_SAMPLE_UNIT_SIZE,
+              BEAM_FORMING_WINDOW_SIZE)
+          .forEach(
+              configOption ->
+                  readIntegerFromEnv(
+                      configuration, configOption, keyAsEnvName(configOption.key())));
+      Stream.of(COEFFICIENT_DATA_PATH)
+          .forEach(
+              configOption ->
+                  readStringFromEnv(configuration, configOption, keyAsEnvName(configOption.key())));
+      int timeSampleSize = configuration.getInteger(TIME_SAMPLE_SIZE);
+      int timeSampleUnitSize = configuration.getInteger(TIME_SAMPLE_UNIT_SIZE);
+      Preconditions.checkArgument(
+          timeSampleSize >= timeSampleUnitSize,
+          "time sample size(%s) should be greater than or equal to time sample min size(%s)",
+          timeSampleSize,
+          timeSampleUnitSize);
+      Preconditions.checkArgument(
+          0 == timeSampleSize % timeSampleUnitSize,
+          "time sample size(%s) should be divisible by time sample min size(%s)",
+          timeSampleSize,
+          timeSampleUnitSize);
+      return configuration;
+    }
+  }
+
+  private static Configuration readIntegerFromEnv(
+      Configuration configuration, ConfigOption<Integer> configOption, String envName) {
+    return configuration.set(
+        configOption,
+        Optional.ofNullable(System.getenv(envName))
+            .map(Integer::parseInt)
+            .orElse(configOption.defaultValue()));
+  }
+
+  private static Configuration readStringFromEnv(
+      Configuration configuration, ConfigOption<String> configOption, String envName) {
+    return configuration.set(
+        configOption,
+        Optional.ofNullable(System.getenv(envName)).orElse(configOption.defaultValue()));
+  }
+
+  private static String keyAsEnvName(String key) {
+    return key.replace(".", "_");
+  }
 }
