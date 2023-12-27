@@ -64,8 +64,7 @@ public class CosmicAntennaApp {
             .build();
     SingleOutputStreamOperator<BeamData> beamDataStream =
         env.addSource(new FPGASource())
-            // TODO source parallelism set with CosmicAntennaConf
-            .setParallelism(2)
+            .setParallelism(configuration.getInteger(CosmicAntennaConf.FPGA_SOURCE_PARALLELISM))
             .assignTimestampsAndWatermarks(
                 WatermarkStrategy.<AntennaData>forBoundedOutOfOrderness(
                         // TODO configure duration
