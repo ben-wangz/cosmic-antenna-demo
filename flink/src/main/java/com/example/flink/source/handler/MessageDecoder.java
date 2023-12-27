@@ -45,7 +45,9 @@ public class MessageDecoder extends MessageToMessageDecoder<DatagramPacket> {
     if ((headerSize + dataSize) != packageSize) {
       LOGGER.warn(
           "omit package: packageSize({}) != (headerSize({}) + dataSize({}))",
-          packageSize, headerSize, dataSize);
+          packageSize,
+          headerSize,
+          dataSize);
       return;
     }
     byte[] bytes = ByteBufUtil.getBytes(input);

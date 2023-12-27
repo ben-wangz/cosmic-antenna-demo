@@ -1,14 +1,13 @@
 package com.example.flink.data;
 
 import com.google.common.base.Preconditions;
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
-
-import java.io.Serializable;
 
 @Getter
 @EqualsAndHashCode

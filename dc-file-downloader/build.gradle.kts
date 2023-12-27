@@ -15,7 +15,7 @@ repositories {
     mavenCentral()
 }
 
-application{
+application {
     mainClass.set("com.example.distributed.consensus.Downloader")
 }
 
@@ -27,10 +27,10 @@ dependencies {
     implementation("io.minio:minio:8.5.7")
     implementation("commons-io:commons-io:2.12.0")
     implementation("org.apache.commons:commons-lang3:3.12.0")
-    implementation("org.slf4j:slf4j-api:${slf4jVersion}")
+    implementation("org.slf4j:slf4j-api:$slf4jVersion")
 
-    shadow("ch.qos.logback:logback-classic:${logbackVersion}")
-    shadow("ch.qos.logback:logback-core:${logbackVersion}")
+    shadow("ch.qos.logback:logback-classic:$logbackVersion")
+    shadow("ch.qos.logback:logback-core:$logbackVersion")
     shadow(lombokDependency)
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.3")

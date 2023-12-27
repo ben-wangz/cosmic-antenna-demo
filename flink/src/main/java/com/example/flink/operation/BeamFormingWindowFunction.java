@@ -65,9 +65,7 @@ public class BeamFormingWindowFunction
     long startCounterOfWindow = window.getStart();
     Map<Long, ChannelData> indexedChannelData =
         StreamSupport.stream(channelDataIterable.spliterator(), false)
-            .collect(
-                Collectors.toMap(
-                        ChannelData::getCounter, channelData -> channelData));
+            .collect(Collectors.toMap(ChannelData::getCounter, channelData -> channelData));
     int length = antennaSize * timeSampleUnitSize * beamFormingWindowSize;
     byte[] realArray = new byte[length];
     byte[] imaginaryArray = new byte[length];
@@ -78,7 +76,6 @@ public class BeamFormingWindowFunction
                 + unitIndex * timeSampleUnitSize;
         int startIndexOfUnitChannelData = antennaIndex * timeSampleUnitSize;
         ChannelData unitChannelData = indexedChannelData.get(startCounterOfWindow + unitIndex);
-        System.out.println(String.format("channelData array length %s, beamFormingWindowSize: %s", unitChannelData.getRealArray().length, beamFormingWindowSize));
         // missing data will be interpreted with 0
         if (null == unitChannelData) {
           continue;

@@ -10,15 +10,15 @@ import lombok.extern.jackson.Jacksonized;
 @EqualsAndHashCode
 @ToString
 public class MinioConnection {
-    private final String endpoint;
-    private final String accessKey;
-    private final String accessSecret;
+  private final String endpoint;
+  private final String accessKey;
+  private final String accessSecret;
 
-    @Builder
-    @Jacksonized
-    public MinioConnection(String endpoint, String accessKey, String accessSecret) {
-        this.endpoint = endpoint;
-        this.accessKey = accessKey;
-        this.accessSecret = accessSecret;
-    }
+  @Builder
+  @Jacksonized
+  public MinioConnection(String endpoint, String accessKey, String accessSecret) {
+    this.endpoint = endpoint;
+    this.accessKey = accessKey;
+    this.accessSecret = accessSecret;
+  }
 }
