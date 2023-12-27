@@ -7,6 +7,7 @@ import com.google.common.base.Preconditions;
 import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.Builder;
@@ -49,8 +50,8 @@ public class BeamFormingWindowFunction
     this.beamFormingWindowSize = beamFormingWindowSize;
     this.coefficientDataList = coefficientDataList;
     Preconditions.checkArgument(
-        coefficientDataList.size() >= channelSize,
-        "coefficientDataList.size(%s) < channelSize(%s)",
+        coefficientDataList.size() == channelSize,
+        "coefficientDataList.size(%s) == channelSize(%s)",
         coefficientDataList.size(),
         channelSize);
   }
@@ -65,7 +66,7 @@ public class BeamFormingWindowFunction
     long startCounterOfWindow = window.getStart();
     Map<Long, ChannelData> indexedChannelData =
         StreamSupport.stream(channelDataIterable.spliterator(), false)
-            .collect(Collectors.toMap(ChannelData::getCounter, channelData -> channelData));
+            .collect(Collectors.toMap(ChannelData::getCounter, Function.identity()));
     int length = antennaSize * timeSampleUnitSize * beamFormingWindowSize;
     byte[] realArray = new byte[length];
     byte[] imaginaryArray = new byte[length];

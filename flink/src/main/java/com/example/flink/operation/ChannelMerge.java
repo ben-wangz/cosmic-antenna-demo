@@ -101,14 +101,14 @@ public class ChannelMerge
     Long counterRight = channelDataFromAccRight.getCounter();
     if (-1 != channelIdLeft && -1 != channelIdRight) {
       Preconditions.checkArgument(
-          channelIdLeft.equals(channelIdRight),
+          Objects.equals(channelIdLeft, channelIdRight),
           "channelIdLeft(%s) != channelIdRight(%s)",
           channelIdLeft,
           channelIdRight);
     }
     if (-1L != counterLeft && -1L != counterRight) {
       Preconditions.checkArgument(
-          counterLeft.equals(counterRight),
+          Objects.equals(counterLeft, counterRight),
           "counterLeft(%s) != counterRight(%s)",
           counterLeft,
           counterRight);

@@ -8,11 +8,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.shaded.guava30.com.google.common.base.Preconditions;
 
 public class CosmicAntennaConf {
-  public static final ConfigOption<Integer> PACKAGE_HEADER_SIZE =
-      ConfigOptions.key("cosmic.antenna.udp.header.size")
-          .intType()
-          .defaultValue(8)
-          .withDescription("data header length in one package from FPGA");
+
   public static final ConfigOption<Integer> TIME_SAMPLE_SIZE =
       ConfigOptions.key("cosmic.antenna.app.timeSample.size")
           .intType()
@@ -28,6 +24,16 @@ public class CosmicAntennaConf {
           .intType()
           .defaultValue(10)
           .withDescription("beam forming window size");
+  public static final ConfigOption<Integer> FPGA_SOURCE_PARALLELISM =
+          ConfigOptions.key("cosmic.antenna.app.source.parallelism")
+                  .intType()
+                  .defaultValue(1)
+                  .withDescription("number of parallelism for FPGA source operator");
+  public static final ConfigOption<Integer> PACKAGE_HEADER_SIZE =
+          ConfigOptions.key("cosmic.antenna.fpga.package.header.size")
+                  .intType()
+                  .defaultValue(8)
+                  .withDescription("data header length in one package from FPGA");
   public static final ConfigOption<Integer> CHANNEL_SIZE =
       ConfigOptions.key("cosmic.antenna.fpga.channel.size")
           .intType()
@@ -43,11 +49,6 @@ public class CosmicAntennaConf {
           .intType()
           .defaultValue(180)
           .withDescription("number of beams in one package from FPGA");
-  public static final ConfigOption<Integer> FPGA_SOURCE_PARALLELISM =
-      ConfigOptions.key("cosmic.antenna.fpga.source.parallelism")
-          .intType()
-          .defaultValue(1)
-          .withDescription("number of parallelism for FPGA source operator");
   public static final ConfigOption<String> COEFFICIENT_DATA_PATH =
       ConfigOptions.key("cosmic.antenna.coefficient.data.path")
           .stringType()
