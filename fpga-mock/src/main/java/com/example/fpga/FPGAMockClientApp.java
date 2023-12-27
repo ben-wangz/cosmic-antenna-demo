@@ -9,14 +9,14 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ClientApp {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ClientApp.class);
+public class FPGAMockClientApp {
+  private static final Logger LOGGER = LoggerFactory.getLogger(FPGAMockClientApp.class);
 
   public static void main(String[] args) throws Exception {
     LOGGER.info("Creating a new FPGA UDP Client");
     String host = Optional.ofNullable(System.getenv("FPGA_CLIENT_HOST")).orElse("127.0.0.1");
     int port =
-        Optional.ofNullable(System.getenv("FPGA_CLIENT_PORT")).map(Integer::parseInt).orElse(50330);
+        Optional.ofNullable(System.getenv("FPGA_CLIENT_PORT")).map(Integer::parseInt).orElse(59986);
     int count =
         Optional.ofNullable(System.getenv("RECORD_COUNT")).map(Integer::parseInt).orElse(-1);
     int interval =
