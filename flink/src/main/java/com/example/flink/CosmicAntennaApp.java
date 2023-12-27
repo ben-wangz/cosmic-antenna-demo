@@ -1,5 +1,7 @@
 package com.example.flink;
 
+import static com.example.flink.util.CoefficientDataUtil.*;
+
 import com.example.flink.data.*;
 import com.example.flink.operation.*;
 import com.example.flink.sink.JsonLogSink;
@@ -23,8 +25,6 @@ import org.apache.flink.util.OutputTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.example.flink.util.CoefficientDataUtil.*;
-
 public class CosmicAntennaApp {
   private static final Logger LOGGER = LoggerFactory.getLogger(CosmicAntennaApp.class);
 
@@ -32,7 +32,8 @@ public class CosmicAntennaApp {
 
   public static void main(String[] args) throws Exception {
     Configuration configuration = CosmicAntennaConf.ConfigurationBuilder.build();
-    Path tempDir = generateCoefficientDataFile(configuration.getInteger(CosmicAntennaConf.CHANNEL_SIZE));
+    Path tempDir =
+        generateCoefficientDataFile(configuration.getInteger(CosmicAntennaConf.CHANNEL_SIZE));
     configuration.set(CosmicAntennaConf.COEFFICIENT_DATA_PATH, tempDir.toString());
     int timeSampleSize = configuration.getInteger(CosmicAntennaConf.TIME_SAMPLE_SIZE);
     int timeSampleUnitSize = configuration.getInteger(CosmicAntennaConf.TIME_SAMPLE_UNIT_SIZE);
@@ -92,9 +93,9 @@ public class CosmicAntennaApp {
                     .antennaSize(configuration.getInteger(CosmicAntennaConf.ANTENNA_SIZE))
                     .timeSampleUnitSize(timeSampleUnitSize)
                     .beamFormingWindowSize(beamFormingWindowSize)
-                    .coefficientDataList(retrieveCoefficientDataList(
-                            configuration.getString(CosmicAntennaConf.COEFFICIENT_DATA_PATH))
-                    )
+                    .coefficientDataList(
+                        retrieveCoefficientDataList(
+                            configuration.getString(CosmicAntennaConf.COEFFICIENT_DATA_PATH)))
                     .build())
             .keyBy((KeySelector<ChannelBeamData, Integer>) ChannelBeamData::getBeamId)
             .window(

@@ -25,15 +25,15 @@ public class CosmicAntennaConf {
           .defaultValue(10)
           .withDescription("beam forming window size");
   public static final ConfigOption<Integer> FPGA_SOURCE_PARALLELISM =
-          ConfigOptions.key("cosmic.antenna.app.source.parallelism")
-                  .intType()
-                  .defaultValue(1)
-                  .withDescription("number of parallelism for FPGA source operator");
+      ConfigOptions.key("cosmic.antenna.app.source.parallelism")
+          .intType()
+          .defaultValue(1)
+          .withDescription("number of parallelism for FPGA source operator");
   public static final ConfigOption<Integer> PACKAGE_HEADER_SIZE =
-          ConfigOptions.key("cosmic.antenna.fpga.package.header.size")
-                  .intType()
-                  .defaultValue(8)
-                  .withDescription("data header length in one package from FPGA");
+      ConfigOptions.key("cosmic.antenna.fpga.package.header.size")
+          .intType()
+          .defaultValue(8)
+          .withDescription("data header length in one package from FPGA");
   public static final ConfigOption<Integer> CHANNEL_SIZE =
       ConfigOptions.key("cosmic.antenna.fpga.channel.size")
           .intType()
