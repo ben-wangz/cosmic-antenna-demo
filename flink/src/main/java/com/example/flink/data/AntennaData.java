@@ -16,25 +16,22 @@ import lombok.extern.jackson.Jacksonized;
 @NoArgsConstructor
 @EqualsAndHashCode
 @ToString
-public class SampleData implements Serializable {
-  private static final long serialVersionUID = 3791844431556452626L;
-  private Integer channelId;
+public class AntennaData implements Serializable {
+  private static final long serialVersionUID = 2791144471356852216L;
   private Integer antennaId;
-  private Long startCounter;
+  private Long packageCounter;
   @ToString.Exclude private byte[] realArray;
   @ToString.Exclude private byte[] imaginaryArray;
 
   @Jacksonized
   @Builder(toBuilder = true)
-  public SampleData(
-      Integer channelId,
+  public AntennaData(
       @NonNull Integer antennaId,
-      @NonNull Long startCounter,
-      byte @NonNull [] realArray,
-      byte @NonNull [] imaginaryArray) {
-    this.channelId = channelId;
+      @NonNull Long packageCounter,
+      @NonNull byte[] realArray,
+      @NonNull byte[] imaginaryArray) {
     this.antennaId = antennaId;
-    this.startCounter = startCounter;
+    this.packageCounter = packageCounter;
     this.realArray = realArray;
     this.imaginaryArray = imaginaryArray;
   }
