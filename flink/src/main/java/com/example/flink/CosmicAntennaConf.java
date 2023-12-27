@@ -29,7 +29,7 @@ public class CosmicAntennaConf {
                   .defaultValue(10)
                   .withDescription("beam forming window size");
   public static final ConfigOption<Integer> CHANNEL_SIZE =
-          ConfigOptions.key("cosmic.antenna.fpga.channel.ize")
+          ConfigOptions.key("cosmic.antenna.fpga.channel.size")
                   .intType()
                   .defaultValue(1000)
                   .withDescription("number of channels in one package from FPGA");
