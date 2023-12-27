@@ -23,6 +23,7 @@ import org.bytedeco.opencv.opencv_core.Mat;
 @ToString
 public class BeamFormingWindowFunction
     implements WindowFunction<ChannelData, ChannelBeamData, Integer, TimeWindow>, Closeable {
+  private static final long serialVersionUID = 5101076627162003094L;
   private final Integer channelSize;
   private final Integer beamSize;
   private final Integer antennaSize;
@@ -48,8 +49,8 @@ public class BeamFormingWindowFunction
     this.beamFormingWindowSize = beamFormingWindowSize;
     this.coefficientDataList = coefficientDataList;
     Preconditions.checkArgument(
-        coefficientDataList.size() == channelSize,
-        "coefficientDataList.size(%s) != channelSize(%s)",
+        coefficientDataList.size() >= channelSize,
+        "coefficientDataList.size(%s) < channelSize(%s)",
         coefficientDataList.size(),
         channelSize);
   }
@@ -66,7 +67,7 @@ public class BeamFormingWindowFunction
         StreamSupport.stream(channelDataIterable.spliterator(), false)
             .collect(
                 Collectors.toMap(
-                    channelData -> channelData.getCounter(), channelData -> channelData));
+                        ChannelData::getCounter, channelData -> channelData));
     int length = antennaSize * timeSampleUnitSize * beamFormingWindowSize;
     byte[] realArray = new byte[length];
     byte[] imaginaryArray = new byte[length];
@@ -77,18 +78,19 @@ public class BeamFormingWindowFunction
                 + unitIndex * timeSampleUnitSize;
         int startIndexOfUnitChannelData = antennaIndex * timeSampleUnitSize;
         ChannelData unitChannelData = indexedChannelData.get(startCounterOfWindow + unitIndex);
+        System.out.println(String.format("channelData array length %s, beamFormingWindowSize: %s", unitChannelData.getRealArray().length, beamFormingWindowSize));
         // missing data will be interpreted with 0
         if (null == unitChannelData) {
           continue;
         }
         System.arraycopy(
-            unitChannelData,
+            unitChannelData.getRealArray(),
             startIndexOfUnitChannelData,
             realArray,
             startIndexOfMergedChannelData,
             timeSampleUnitSize);
         System.arraycopy(
-            unitChannelData,
+            unitChannelData.getImaginaryArray(),
             startIndexOfUnitChannelData,
             imaginaryArray,
             startIndexOfMergedChannelData,

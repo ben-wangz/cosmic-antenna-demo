@@ -17,7 +17,7 @@ import lombok.extern.jackson.Jacksonized;
 @EqualsAndHashCode
 @ToString
 public class ChannelData implements Serializable {
-  private static final long serialVersionUID = 3791844431556452626L;
+  private static final long serialVersionUID = -702484595450736157L;
   private Integer channelId;
   private Long counter;
   @ToString.Exclude private byte[] realArray;

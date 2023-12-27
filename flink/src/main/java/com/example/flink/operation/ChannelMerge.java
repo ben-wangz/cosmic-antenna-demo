@@ -4,6 +4,7 @@ import com.example.flink.data.ChannelAntennaData;
 import com.example.flink.data.ChannelData;
 import com.example.flink.data.ChannelDataACC;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,6 +19,7 @@ import org.apache.flink.util.Preconditions;
 @ToString
 public class ChannelMerge
     implements AggregateFunction<ChannelAntennaData, ChannelDataACC, ChannelData> {
+  private static final long serialVersionUID = -4045304070063939211L;
   private final Integer timeSampleSize;
   private final Integer antennaSize;
 
@@ -54,7 +56,7 @@ public class ChannelMerge
       channelDataFromAcc.setChannelId(channelId);
     } else {
       Preconditions.checkArgument(
-          channelId == accumulatorChannelId,
+              Objects.equals(channelId,accumulatorChannelId),
           "channelId(%s) != accumulatorChannelId(%s)",
           channelId,
           accumulatorChannelId);
@@ -63,7 +65,7 @@ public class ChannelMerge
       channelDataFromAcc.setCounter(counter);
     } else {
       Preconditions.checkArgument(
-          counter == accumulatorCounter,
+              Objects.equals(counter, accumulatorCounter),
           "counter(%s) != accumulatorCounter(%s)",
           counter,
           accumulatorCounter);
@@ -99,14 +101,14 @@ public class ChannelMerge
     Long counterRight = channelDataFromAccRight.getCounter();
     if (-1 != channelIdLeft && -1 != channelIdRight) {
       Preconditions.checkArgument(
-          channelIdLeft == channelIdRight,
+              channelIdLeft.equals(channelIdRight),
           "channelIdLeft(%s) != channelIdRight(%s)",
           channelIdLeft,
           channelIdRight);
     }
     if (-1L != counterLeft && -1L != counterRight) {
       Preconditions.checkArgument(
-          counterLeft == counterRight,
+              counterLeft.equals(counterRight),
           "counterLeft(%s) != counterRight(%s)",
           counterLeft,
           counterRight);

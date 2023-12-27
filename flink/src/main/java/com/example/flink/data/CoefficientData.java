@@ -8,10 +8,13 @@ import lombok.NonNull;
 import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
 
+import java.io.Serializable;
+
 @Getter
 @EqualsAndHashCode
 @ToString
-public class CoefficientData {
+public class CoefficientData implements Serializable {
+  private static final long serialVersionUID = 7241510190414198351L;
   private final byte[] realArray;
   private final byte[] imaginaryArray;
 

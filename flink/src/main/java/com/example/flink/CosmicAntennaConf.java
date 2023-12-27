@@ -16,18 +16,18 @@ public class CosmicAntennaConf {
   public static final ConfigOption<Integer> TIME_SAMPLE_SIZE =
           ConfigOptions.key("cosmic.antenna.app.timeSample.size")
                   .intType()
-                  .defaultValue(8)
+                  .defaultValue(4)
                   .withDescription("number of time samples in one package from FPGA");
+  public static final ConfigOption<Integer> TIME_SAMPLE_UNIT_SIZE =
+          ConfigOptions.key("cosmic.antenna.app.timeSampleUnit.size")
+                  .intType()
+                  .defaultValue(4)
+                  .withDescription("minimum number of time samples in the whole system");
   public static final ConfigOption<Integer> BEAM_FORMING_WINDOW_SIZE =
           ConfigOptions.key("cosmic.antenna.app.beamForming.windowSize")
                   .intType()
                   .defaultValue(10)
                   .withDescription("beam forming window size");
-  public static final ConfigOption<Integer> TIME_SAMPLE_UNIT_SIZE =
-          ConfigOptions.key("cosmic.antenna.app.timeSampleUnit.size")
-                  .intType()
-                  .defaultValue(8)
-                  .withDescription("minimum number of time samples in the whole system");
   public static final ConfigOption<Integer> CHANNEL_SIZE =
           ConfigOptions.key("cosmic.antenna.fpga.channel.ize")
                   .intType()
@@ -46,14 +46,13 @@ public class CosmicAntennaConf {
   public static final ConfigOption<Integer> FPGA_SOURCE_PARALLELISM =
           ConfigOptions.key("cosmic.antenna.fpga.source.parallelism")
                   .intType()
-                  .defaultValue(2)
+                  .defaultValue(1)
                   .withDescription("number of parallelism for FPGA source operator");
   public static final ConfigOption<String> COEFFICIENT_DATA_PATH =
           ConfigOptions.key("cosmic.antenna.coefficient.data.path")
                   .stringType()
                   .defaultValue("coefficient/")
                   .withDescription("path to coefficient data file");
-
 
 
   public static class ConfigurationBuilder {
