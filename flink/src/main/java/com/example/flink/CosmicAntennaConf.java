@@ -8,41 +8,47 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.shaded.guava30.com.google.common.base.Preconditions;
 
 public class CosmicAntennaConf {
-  public static final ConfigOption<Integer> PACKAGE_HEADER_SIZE =
-      ConfigOptions.key("cosmic.antenna.dataHeaderSize")
-          .intType()
-          .defaultValue(8)
-          .withDescription("data header length in one package from FPGA");
+
   public static final ConfigOption<Integer> TIME_SAMPLE_SIZE =
-      ConfigOptions.key("cosmic.antenna.timeSampleSize")
+      ConfigOptions.key("cosmic.antenna.app.timeSample.size")
           .intType()
-          .defaultValue(8)
+          .defaultValue(4)
           .withDescription("number of time samples in one package from FPGA");
+  public static final ConfigOption<Integer> TIME_SAMPLE_UNIT_SIZE =
+      ConfigOptions.key("cosmic.antenna.app.timeSampleUnit.size")
+          .intType()
+          .defaultValue(4)
+          .withDescription("minimum number of time samples in the whole system");
+  public static final ConfigOption<Integer> BEAM_FORMING_WINDOW_SIZE =
+      ConfigOptions.key("cosmic.antenna.app.beamForming.windowSize")
+          .intType()
+          .defaultValue(10)
+          .withDescription("beam forming window size");
+  public static final ConfigOption<Integer> FPGA_SOURCE_PARALLELISM =
+          ConfigOptions.key("cosmic.antenna.app.source.parallelism")
+                  .intType()
+                  .defaultValue(1)
+                  .withDescription("number of parallelism for FPGA source operator");
+  public static final ConfigOption<Integer> PACKAGE_HEADER_SIZE =
+          ConfigOptions.key("cosmic.antenna.fpga.package.header.size")
+                  .intType()
+                  .defaultValue(8)
+                  .withDescription("data header length in one package from FPGA");
   public static final ConfigOption<Integer> CHANNEL_SIZE =
-      ConfigOptions.key("cosmic.antenna.channelSize")
+      ConfigOptions.key("cosmic.antenna.fpga.channel.size")
           .intType()
           .defaultValue(1000)
           .withDescription("number of channels in one package from FPGA");
   public static final ConfigOption<Integer> ANTENNA_SIZE =
-      ConfigOptions.key("cosmic.antenna.antennaSize")
+      ConfigOptions.key("cosmic.antenna.fpga.antenna.size")
           .intType()
           .defaultValue(224)
           .withDescription("number of antennas in one package from FPGA");
   public static final ConfigOption<Integer> BEAM_SIZE =
-      ConfigOptions.key("cosmic.antenna.beamSize")
+      ConfigOptions.key("cosmic.antenna.fpga.beam.size")
           .intType()
           .defaultValue(180)
           .withDescription("number of beams in one package from FPGA");
-  public static final ConfigOption<Integer> TIME_SAMPLE_UNIT_SIZE =
-      ConfigOptions.key("cosmic.antenna.timeSampleUnitSize")
-          .intType()
-          .defaultValue(8)
-          .withDescription("minimum number of time samples in the whole system");
-  public static final ConfigOption<Integer> BEAM_FORMING_WINDOW_SIZE =
-      ConfigOptions.key("cosmic.antenna.beamFormingWindowSize")
-          .intType()
-          .defaultValue(10)
-          .withDescription("beam forming window size");
   public static final ConfigOption<String> COEFFICIENT_DATA_PATH =
       ConfigOptions.key("cosmic.antenna.coefficient.data.path")
           .stringType()

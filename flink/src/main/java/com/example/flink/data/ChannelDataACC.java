@@ -17,7 +17,7 @@ import lombok.extern.jackson.Jacksonized;
 @EqualsAndHashCode
 @ToString
 public class ChannelDataACC implements Serializable {
-  private static final long serialVersionUID = 3791844431556452626L;
+  private static final long serialVersionUID = -8607365112564051370L;
   private Set<Integer> gatheredAntennaIdSet;
   private ChannelData channelData;
 

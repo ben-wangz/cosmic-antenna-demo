@@ -17,7 +17,7 @@ public class SampleDataV2Handler extends SimpleChannelInboundHandler<Object> {
     DatagramPacket packet = (DatagramPacket) msg;
     byte[] bytes = ByteBufUtil.getBytes(packet.content());
     ByteBuffer antennaId = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 0, 1));
-    ByteBuffer counter = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 2, 8));
+    ByteBuffer counter = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 1, 8));
 
     byte[] paddedCounter = new byte[8];
     System.arraycopy(counter.array(), 0, paddedCounter, 0, counter.array().length);

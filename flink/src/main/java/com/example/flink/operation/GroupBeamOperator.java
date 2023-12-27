@@ -26,7 +26,7 @@ public class GroupBeamOperator
   public GroupBeamOperator(List<String> algorithmNameList) {
     outputTagList =
         algorithmNameList.stream()
-            .map(algorithmName -> new OutputTag<BeamData>(algorithmName))
+            .map(algorithmName -> new OutputTag<BeamData>(algorithmName) {})
             .collect(Collectors.toList());
   }
 

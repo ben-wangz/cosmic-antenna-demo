@@ -7,6 +7,7 @@ import com.google.common.base.Preconditions;
 import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.Builder;
@@ -23,6 +24,7 @@ import org.bytedeco.opencv.opencv_core.Mat;
 @ToString
 public class BeamFormingWindowFunction
     implements WindowFunction<ChannelData, ChannelBeamData, Integer, TimeWindow>, Closeable {
+  private static final long serialVersionUID = 5101076627162003094L;
   private final Integer channelSize;
   private final Integer beamSize;
   private final Integer antennaSize;
@@ -49,7 +51,7 @@ public class BeamFormingWindowFunction
     this.coefficientDataList = coefficientDataList;
     Preconditions.checkArgument(
         coefficientDataList.size() == channelSize,
-        "coefficientDataList.size(%s) != channelSize(%s)",
+        "coefficientDataList.size(%s) == channelSize(%s)",
         coefficientDataList.size(),
         channelSize);
   }
@@ -64,9 +66,7 @@ public class BeamFormingWindowFunction
     long startCounterOfWindow = window.getStart();
     Map<Long, ChannelData> indexedChannelData =
         StreamSupport.stream(channelDataIterable.spliterator(), false)
-            .collect(
-                Collectors.toMap(
-                    channelData -> channelData.getCounter(), channelData -> channelData));
+            .collect(Collectors.toMap(ChannelData::getCounter, Function.identity()));
     int length = antennaSize * timeSampleUnitSize * beamFormingWindowSize;
     byte[] realArray = new byte[length];
     byte[] imaginaryArray = new byte[length];
@@ -82,13 +82,13 @@ public class BeamFormingWindowFunction
           continue;
         }
         System.arraycopy(
-            unitChannelData,
+            unitChannelData.getRealArray(),
             startIndexOfUnitChannelData,
             realArray,
             startIndexOfMergedChannelData,
             timeSampleUnitSize);
         System.arraycopy(
-            unitChannelData,
+            unitChannelData.getImaginaryArray(),
             startIndexOfUnitChannelData,
             imaginaryArray,
             startIndexOfMergedChannelData,

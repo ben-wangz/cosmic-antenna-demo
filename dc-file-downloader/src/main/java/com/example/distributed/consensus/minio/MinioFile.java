@@ -10,22 +10,15 @@ import lombok.extern.jackson.Jacksonized;
 @ToString
 public class MinioFile {
 
-    @Getter
-    private final String objectKey;
-    @Getter
-    private final boolean isDirectory;
-    @Getter
-    private final long size;
+  @Getter private final String objectKey;
+  @Getter private final boolean isDirectory;
+  @Getter private final long size;
 
-    @Builder(toBuilder = true)
-    @Jacksonized
-    public MinioFile(
-            String objectKey,
-            boolean isDirectory,
-            long size
-    ) {
-        this.objectKey = objectKey;
-        this.isDirectory = isDirectory;
-        this.size = size;
-    }
+  @Builder(toBuilder = true)
+  @Jacksonized
+  public MinioFile(String objectKey, boolean isDirectory, long size) {
+    this.objectKey = objectKey;
+    this.isDirectory = isDirectory;
+    this.size = size;
+  }
 }

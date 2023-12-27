@@ -10,16 +10,14 @@ import lombok.extern.jackson.Jacksonized;
 @ToString
 public class LockFileContent {
 
-    private String hostName;
+  private String hostName;
 
-    private Long created;
+  private Long created;
 
-    @Builder(toBuilder = true)
-    @Jacksonized
-    public LockFileContent(
-            @NonNull String hostName,
-            @NonNull Long created) {
-        this.hostName = hostName;
-        this.created = created;
-    }
+  @Builder(toBuilder = true)
+  @Jacksonized
+  public LockFileContent(@NonNull String hostName, @NonNull Long created) {
+    this.hostName = hostName;
+    this.created = created;
+  }
 }
