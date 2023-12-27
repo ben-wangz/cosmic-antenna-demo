@@ -18,3 +18,4 @@ plugins {
 rootProject.name = "flink-learning"
 include("flink")
 include("fpga-mock")
+include("dc-file-downloader")
