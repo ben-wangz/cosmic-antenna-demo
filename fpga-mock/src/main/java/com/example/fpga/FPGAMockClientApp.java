@@ -16,21 +16,26 @@ public class FPGAMockClientApp {
     LOGGER.info("Creating a new FPGA UDP Client");
     String host = Optional.ofNullable(System.getenv("FPGA_CLIENT_HOST")).orElse("127.0.0.1");
     int port =
-        Optional.ofNullable(System.getenv("FPGA_CLIENT_PORT")).map(Integer::parseInt).orElse(59986);
+        Optional.ofNullable(System.getenv("FPGA_CLIENT_PORT")).map(Integer::parseInt).orElse(18888);
     int count =
         Optional.ofNullable(System.getenv("RECORD_COUNT")).map(Integer::parseInt).orElse(-1);
     int interval =
-        Optional.ofNullable(System.getenv("RECORD_INTERVAL")).map(Integer::parseInt).orElse(3000);
+        Optional.ofNullable(System.getenv("RECORD_INTERVAL")).map(Integer::parseInt).orElse(200);
+    int channelSize =
+            Optional.ofNullable(System.getenv("CHANNEL_SIZE")).map(Integer::parseInt).orElse(10);
+    int timeSampleSize =
+            Optional.ofNullable(System.getenv("TIME_SAMPLE_SIZE")).map(Integer::parseInt).orElse(16);
     int dataChunkSize =
-        Optional.ofNullable(System.getenv("DATA_CHUNK_SIZE")).map(Integer::parseInt).orElse(4000);
+        Optional.ofNullable(System.getenv("DATA_CHUNK_SIZE")).map(Integer::parseInt)
+                .orElse(channelSize * timeSampleSize);
     try (FPGAMockClient client = FPGAMockClient.builder().port(port).build()) {
       ChannelFuture channelFuture = client.startup(host);
       LOGGER.info(
-          "A new FPGA Mock Client is created, [{}:{}, iterator:{}, interval:{}]",
+          "A new FPGA Mock Client is created, [{}:{}, iterator:{}, interval:{}, package size:{}]",
           host,
           port,
           count,
-          interval);
+          interval, dataChunkSize * 2 + 8);
       for (long index = count; index != 0; index--) {
         if (channelFuture.isSuccess()) {
           channelFuture

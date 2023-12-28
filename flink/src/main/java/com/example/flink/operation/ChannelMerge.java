@@ -14,11 +14,14 @@ import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.util.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @EqualsAndHashCode
 @ToString
 public class ChannelMerge
     implements AggregateFunction<ChannelAntennaData, ChannelDataACC, ChannelData> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ChannelMerge.class);
   private static final long serialVersionUID = -4045304070063939211L;
   private final Integer timeSampleSize;
   private final Integer antennaSize;
@@ -129,6 +132,7 @@ public class ChannelMerge
           startIndex,
           timeSampleSize);
     }
+    LOGGER.debug("after channel merge, data array length is {}", channelDataMerged.getRealArray().length);
     return ChannelDataACC.builder()
         .gatheredAntennaIdSet(
             Stream.of(accLeft.getGatheredAntennaIdSet(), accRight.getGatheredAntennaIdSet())

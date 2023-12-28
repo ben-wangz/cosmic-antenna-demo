@@ -10,10 +10,14 @@ import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.util.Collector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @EqualsAndHashCode
 @ToString
 public class ChannelDataParser implements FlatMapFunction<AntennaData, ChannelAntennaData> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ChannelDataParser.class);
+  private static final long serialVersionUID = 89385729028727556L;
   private final int timeSampleSize;
   private final int channelSize;
 
@@ -27,9 +31,11 @@ public class ChannelDataParser implements FlatMapFunction<AntennaData, ChannelAn
   @Override
   public void flatMap(AntennaData antennaData, Collector<ChannelAntennaData> collector)
       throws Exception {
+    LOGGER.debug("before channel data parse, the real array length is {}", antennaData.getRealArray().length);
     for (int channelId = 0; channelId < channelSize; channelId++) {
       int startIndex = channelId * timeSampleSize;
       int endIndex = startIndex + timeSampleSize;
+      LOGGER.debug("parse channel data -> channelId {}, real [{},{})", channelId, startIndex, endIndex);
       collector.collect(
           ChannelAntennaData.builder()
               .channelId(channelId)
