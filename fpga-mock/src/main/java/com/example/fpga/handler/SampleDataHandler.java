@@ -16,13 +16,15 @@ public class SampleDataHandler extends SimpleChannelInboundHandler<Object> {
   public void channelRead0(ChannelHandlerContext ctx, Object msg) {
     DatagramPacket packet = (DatagramPacket) msg;
     byte[] bytes = ByteBufUtil.getBytes(packet.content());
-    ByteBuffer channelId = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 0, 2));
-    ByteBuffer antennaId = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 2, 4));
-    ByteBuffer counter = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 4, 12));
+    ByteBuffer antennaId = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 0, 1));
+    ByteBuffer counter = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 1, 8));
+
+    byte[] paddedCounter = new byte[8];
+    System.arraycopy(counter.array(), 0, paddedCounter, 0, counter.array().length);
+
     LOGGER.info(
-        "Response channelId:{}, antennaId:{}, counter:{} ",
-        channelId.getShort(),
-        antennaId.getShort(),
-        counter.getLong());
+        "Response  antennaId:{}, counter:{} ",
+        antennaId.get(),
+        ByteBuffer.wrap(paddedCounter).getLong());
   }
 }

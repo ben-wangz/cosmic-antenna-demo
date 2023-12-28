@@ -1,6 +1,6 @@
 package com.example.fpga.client;
 
-import com.example.fpga.handler.SampleDataV2Handler;
+import com.example.fpga.handler.SampleDataHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -25,7 +25,7 @@ public class FPGAMockClient implements Closeable {
       b.handler(
           new ChannelInitializer<DatagramChannel>() {
             protected void initChannel(DatagramChannel datagramChannel) {
-              datagramChannel.pipeline().addLast(new SampleDataV2Handler());
+              datagramChannel.pipeline().addLast(new SampleDataHandler());
             }
           });
       return b.connect(host, this.port).sync();
