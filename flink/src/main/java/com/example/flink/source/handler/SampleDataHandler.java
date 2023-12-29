@@ -36,7 +36,6 @@ public class SampleDataHandler extends SimpleChannelInboundHandler<byte[]> {
       throws Exception {
     ByteBuffer antennaId = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 0, 1));
     ByteBuffer packageCounter = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 1, 8));
-    // TODO transform counter to long with utils
     byte[] paddedCounter = new byte[8];
     System.arraycopy(packageCounter.array(), 0, paddedCounter, 1, packageCounter.array().length);
     ByteBuffer realArray = ByteBuffer.wrap(new byte[dataSize / 2]);
@@ -55,7 +54,9 @@ public class SampleDataHandler extends SimpleChannelInboundHandler<byte[]> {
             .realArray(realArray.array())
             .imaginaryArray(imaginaryArray.array())
             .build();
-    LOGGER.debug("got an antenna data item {} and real array size is {}", antennaData, antennaData.getRealArray().length);
+    LOGGER.debug("server got an antenna data item {}, detail info[length:{}, header:{}]", antennaData,
+            antennaData.getRealArray().length,
+            Arrays.toString(Arrays.copyOfRange(antennaData.getRealArray(), 0, 10)));
     if (null != sourceContext) {
       sourceContext.collect(antennaData);
     }

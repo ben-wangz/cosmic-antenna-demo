@@ -19,6 +19,7 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.FileUtils;
 import org.apache.flink.util.OutputTag;
@@ -57,11 +58,12 @@ public class CosmicAntennaApp {
                     .withTimestampAssigner(
                         (antennaData, timestamp) ->
                             antennaData.getPackageCounter()
-                                / (timeSampleSize / timeSampleUnitSize)))
+                                * (timeSampleSize / timeSampleUnitSize)))
             .flatMap(
                 ChannelDataParser.builder()
                     .channelSize(channelSize)
                     .timeSampleSize(timeSampleSize)
+                        .timeSampleUnitSize(timeSampleUnitSize)
                     .build())
             .keyBy(ChannelAntennaData::getChannelId)
             .window(
@@ -72,28 +74,28 @@ public class CosmicAntennaApp {
                     .timeSampleSize(timeSampleSize)
                     .antennaSize(antennaSize)
                     .build())
-            .flatMap(
-                ChannelDataUnitSplitter.builder()
-                    .antennaSize(antennaSize)
-                    .timeSampleSize(timeSampleSize)
-                    .timeSampleUnitSize(timeSampleUnitSize)
-                    .build())
-            .keyBy((KeySelector<ChannelData, Integer>) ChannelData::getChannelId)
-            .window(
-                SlidingEventTimeWindows.of(
-                    Time.milliseconds(timeSampleSize), Time.milliseconds(timeSampleSize)))
-            .apply(
-                BeamFormingWindowFunction.builder()
-                    .channelSize(channelSize)
-                    .beamSize(configuration.getInteger(CosmicAntennaConf.BEAM_SIZE))
-                    .antennaSize(antennaSize)
-                    .timeSampleUnitSize(timeSampleUnitSize)
-                    .beamFormingWindowSize(configuration.getInteger(CosmicAntennaConf.BEAM_FORMING_WINDOW_SIZE))
-                    .coefficientDataList(
-                        retrieveCoefficientDataList(
-                            configuration.getString(CosmicAntennaConf.COEFFICIENT_DATA_PATH)))
-                    .build())
                     .print();
+//            .flatMap(
+//                ChannelDataUnitSplitter.builder()
+//                    .antennaSize(antennaSize)
+//                    .timeSampleSize(timeSampleSize)
+//                    .timeSampleUnitSize(timeSampleUnitSize)
+//                    .build())
+//            .keyBy((KeySelector<ChannelData, Integer>) ChannelData::getChannelId)
+//            .window(
+//                SlidingEventTimeWindows.of(
+//                    Time.milliseconds(timeSampleSize), Time.milliseconds(timeSampleSize)))
+//            .apply(
+//                BeamFormingWindowFunction.builder()
+//                    .channelSize(channelSize)
+//                    .beamSize(configuration.getInteger(CosmicAntennaConf.BEAM_SIZE))
+//                    .antennaSize(antennaSize)
+//                    .timeSampleUnitSize(timeSampleUnitSize)
+//                    .beamFormingWindowSize(configuration.getInteger(CosmicAntennaConf.BEAM_FORMING_WINDOW_SIZE))
+//                    .coefficientDataList(
+//                        retrieveCoefficientDataList(
+//                            configuration.getString(CosmicAntennaConf.COEFFICIENT_DATA_PATH)))
+//                    .build())
 //            .keyBy((KeySelector<ChannelBeamData, Integer>) ChannelBeamData::getBeamId)
 //            .window(
 //                // TODO configure window size

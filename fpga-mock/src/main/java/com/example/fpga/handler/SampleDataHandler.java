@@ -24,7 +24,7 @@ public class SampleDataHandler extends SimpleChannelInboundHandler<Object> {
 
     LOGGER.info(
         "Response  antennaId:{}, counter:{} ",
-        antennaId.get(),
+        antennaId.get() & 0xFF,
         ByteBuffer.wrap(paddedCounter).getLong());
   }
 }

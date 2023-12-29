@@ -12,7 +12,7 @@ public class CosmicAntennaConf {
   public static final ConfigOption<Integer> TIME_SAMPLE_SIZE =
       ConfigOptions.key("cosmic.antenna.app.timeSample.size")
           .intType()
-          .defaultValue(128)
+          .defaultValue(16)
           .withDescription("number of time samples in one package from FPGA");
   public static final ConfigOption<Integer> TIME_SAMPLE_UNIT_SIZE =
       ConfigOptions.key("cosmic.antenna.app.timeSampleUnit.size")
@@ -22,7 +22,7 @@ public class CosmicAntennaConf {
   public static final ConfigOption<Integer> BEAM_FORMING_WINDOW_SIZE =
       ConfigOptions.key("cosmic.antenna.app.beamForming.windowSize")
           .intType()
-          .defaultValue(10)
+          .defaultValue(2)
           .withDescription("beam forming window size");
   public static final ConfigOption<Integer> FPGA_SOURCE_PARALLELISM =
       ConfigOptions.key("cosmic.antenna.app.source.parallelism")
