@@ -32,7 +32,6 @@ public class CosmicAntennaApp {
   public static void main(String[] args) throws Exception {
     Configuration configuration = CosmicAntennaConf.ConfigurationBuilder.build();
     int channelSize = configuration.getInteger(CosmicAntennaConf.CHANNEL_SIZE);
-    //    configuration.set(CosmicAntennaConf.COEFFICIENT_DATA_PATH, tempDir.toString());
     int timeSampleSize = configuration.getInteger(CosmicAntennaConf.TIME_SAMPLE_SIZE);
     int timeSampleUnitSize = configuration.getInteger(CosmicAntennaConf.TIME_SAMPLE_UNIT_SIZE);
     int antennaSize = configuration.getInteger(CosmicAntennaConf.ANTENNA_SIZE);

@@ -52,7 +52,7 @@ public class CosmicAntennaConf {
   public static final ConfigOption<String> COEFFICIENT_DATA_PATH =
       ConfigOptions.key("cosmic.antenna.coefficient.data.path")
           .stringType()
-          .defaultValue("coefficient/")
+          .defaultValue("C:\\Users\\Administrator\\AppData\\Local\\Temp\\cosmic-antenna4896456594933226445")
           .withDescription("path to coefficient data file");
 
   public static class ConfigurationBuilder {

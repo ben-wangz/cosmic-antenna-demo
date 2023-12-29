@@ -13,6 +13,7 @@ var logbackVersion = "1.4.14"
 dependencies {
     annotationProcessor(lombokDependency)
     implementation("com.google.guava:guava:32.1.1-jre")
+    implementation("io.minio:minio:8.5.7")
     implementation("org.apache.flink:flink-walkthrough-common:$flinkVersion")
     implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
@@ -45,8 +46,8 @@ tasks {
         archiveVersion.set("1.0")
         archiveClassifier.set("")
         manifest {
-            attributes(mapOf("Main-Class" to "com.example.helloworld.SensorApp"))
+            attributes(mapOf("Main-Class" to "com.example.flink.CosmicAntennaApp"))
         }
-        relocate("com.google.common", "com.example.helloworld.shadow.com.google.common")
+        relocate("com.google.common", "com.example.flink.shadow.com.google.common")
     }
 }
