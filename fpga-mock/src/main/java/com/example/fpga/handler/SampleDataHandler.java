@@ -20,7 +20,7 @@ public class SampleDataHandler extends SimpleChannelInboundHandler<Object> {
     ByteBuffer counter = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 1, 8));
 
     byte[] paddedCounter = new byte[8];
-    System.arraycopy(counter.array(), 0, paddedCounter, 0, counter.array().length);
+    System.arraycopy(counter.array(), 0, paddedCounter, 1, counter.array().length);
 
     LOGGER.info(
         "Response  antennaId:{}, counter:{} ",

@@ -14,13 +14,13 @@ public class FPGAMockClientApp {
 
   public static void main(String[] args) throws Exception {
     LOGGER.info("Creating a new FPGA UDP Client");
-    String host = Optional.ofNullable(System.getenv("FPGA_CLIENT_HOST")).orElse("127.0.0.1");
+    String host = Optional.ofNullable(System.getenv("FPGA_CLIENT_HOST")).orElse("10.11.32.44");
     int port =
         Optional.ofNullable(System.getenv("FPGA_CLIENT_PORT")).map(Integer::parseInt).orElse(18888);
     int count =
         Optional.ofNullable(System.getenv("RECORD_COUNT")).map(Integer::parseInt).orElse(-1);
     int interval =
-        Optional.ofNullable(System.getenv("RECORD_INTERVAL")).map(Integer::parseInt).orElse(200);
+        Optional.ofNullable(System.getenv("RECORD_INTERVAL")).map(Integer::parseInt).orElse(1000);
     int channelSize =
             Optional.ofNullable(System.getenv("CHANNEL_SIZE")).map(Integer::parseInt).orElse(10);
     int timeSampleSize =
@@ -60,7 +60,7 @@ public class FPGAMockClientApp {
     byteBuffer.put(counter);
 
     byte[] paddedCounter = new byte[8];
-    System.arraycopy(counter, 0, paddedCounter, 0, counter.length);
+    System.arraycopy(counter, 0, paddedCounter, 1, counter.length);
 
     LOGGER.info(
         "Sent antennaId:{}, counter:{}, size of array: {} ",

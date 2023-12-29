@@ -38,7 +38,7 @@ public class SampleDataHandler extends SimpleChannelInboundHandler<byte[]> {
     ByteBuffer packageCounter = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 1, 8));
     // TODO transform counter to long with utils
     byte[] paddedCounter = new byte[8];
-    System.arraycopy(packageCounter.array(), 0, paddedCounter, 0, packageCounter.array().length);
+    System.arraycopy(packageCounter.array(), 0, paddedCounter, 1, packageCounter.array().length);
     ByteBuffer realArray = ByteBuffer.wrap(new byte[dataSize / 2]);
     ByteBuffer imaginaryArray = ByteBuffer.wrap(new byte[dataSize / 2]);
     for (int i = 8; i < bytes.length; i++) {

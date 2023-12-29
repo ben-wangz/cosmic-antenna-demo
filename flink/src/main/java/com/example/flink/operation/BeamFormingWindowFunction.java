@@ -5,6 +5,7 @@ import com.example.flink.data.ChannelData;
 import com.example.flink.data.CoefficientData;
 import com.google.common.base.Preconditions;
 import java.io.Closeable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -19,12 +20,15 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 import org.bytedeco.opencv.global.opencv_core;
 import org.bytedeco.opencv.opencv_core.Mat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @EqualsAndHashCode
 @ToString
 public class BeamFormingWindowFunction
     implements WindowFunction<ChannelData, ChannelBeamData, Integer, TimeWindow>, Closeable {
   private static final long serialVersionUID = 5101076627162003094L;
+  private static final Logger LOGGER = LoggerFactory.getLogger(BeamFormingWindowFunction.class);
   private final Integer channelSize;
   private final Integer beamSize;
   private final Integer antennaSize;
@@ -67,6 +71,7 @@ public class BeamFormingWindowFunction
     Map<Long, ChannelData> indexedChannelData =
         StreamSupport.stream(channelDataIterable.spliterator(), false)
             .collect(Collectors.toMap(ChannelData::getCounter, Function.identity()));
+    LOGGER.info("startCounterOfWindow -> {}, indexedChannelData.keys -> {}", startCounterOfWindow, new ArrayList<>(indexedChannelData.keySet()));
     int length = antennaSize * timeSampleUnitSize * beamFormingWindowSize;
     byte[] realArray = new byte[length];
     byte[] imaginaryArray = new byte[length];
@@ -75,7 +80,9 @@ public class BeamFormingWindowFunction
         int startIndexOfMergedChannelData =
             antennaIndex * timeSampleUnitSize * beamFormingWindowSize
                 + unitIndex * timeSampleUnitSize;
+        LOGGER.debug("beam forming split index from merged data -> {}", startIndexOfMergedChannelData);
         int startIndexOfUnitChannelData = antennaIndex * timeSampleUnitSize;
+        LOGGER.debug("beam forming split index from unit data -> {}", startIndexOfUnitChannelData);
         ChannelData unitChannelData = indexedChannelData.get(startCounterOfWindow + unitIndex);
         // missing data will be interpreted with 0
         if (null == unitChannelData) {
