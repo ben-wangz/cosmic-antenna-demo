@@ -71,7 +71,10 @@ public class BeamFormingWindowFunction
     Map<Long, ChannelData> indexedChannelData =
         StreamSupport.stream(channelDataIterable.spliterator(), false)
             .collect(Collectors.toMap(ChannelData::getCounter, Function.identity()));
-    LOGGER.info("startCounterOfWindow -> {}, indexedChannelData.keys -> {}", startCounterOfWindow, new ArrayList<>(indexedChannelData.keySet()));
+    LOGGER.info(
+        "startCounterOfWindow -> {}, indexedChannelData.keys -> {}",
+        startCounterOfWindow,
+        new ArrayList<>(indexedChannelData.keySet()));
     int length = antennaSize * timeSampleUnitSize * beamFormingWindowSize;
     byte[] realArray = new byte[length];
     byte[] imaginaryArray = new byte[length];
@@ -80,7 +83,8 @@ public class BeamFormingWindowFunction
         int startIndexOfMergedChannelData =
             antennaIndex * timeSampleUnitSize * beamFormingWindowSize
                 + unitIndex * timeSampleUnitSize;
-        LOGGER.debug("beam forming split index from merged data -> {}", startIndexOfMergedChannelData);
+        LOGGER.debug(
+            "beam forming split index from merged data -> {}", startIndexOfMergedChannelData);
         int startIndexOfUnitChannelData = antennaIndex * timeSampleUnitSize;
         LOGGER.debug("beam forming split index from unit data -> {}", startIndexOfUnitChannelData);
         ChannelData unitChannelData = indexedChannelData.get(startCounterOfWindow + unitIndex);

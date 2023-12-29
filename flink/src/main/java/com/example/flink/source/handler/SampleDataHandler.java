@@ -54,9 +54,11 @@ public class SampleDataHandler extends SimpleChannelInboundHandler<byte[]> {
             .realArray(realArray.array())
             .imaginaryArray(imaginaryArray.array())
             .build();
-    LOGGER.debug("server got an antenna data item {}, detail info[length:{}, header:{}]", antennaData,
-            antennaData.getRealArray().length,
-            Arrays.toString(Arrays.copyOfRange(antennaData.getRealArray(), 0, 10)));
+    LOGGER.debug(
+        "server got an antenna data item {}, detail info[length:{}, header:{}]",
+        antennaData,
+        antennaData.getRealArray().length,
+        Arrays.toString(Arrays.copyOfRange(antennaData.getRealArray(), 0, 10)));
     if (null != sourceContext) {
       sourceContext.collect(antennaData);
     }

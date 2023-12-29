@@ -5,8 +5,6 @@ import com.example.flink.data.ChannelBeamData;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
-import com.example.flink.source.handler.SampleDataHandler;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -33,9 +31,11 @@ public class GroupBeamOperator
   public GroupBeamOperator(List<String> algorithmNameList) {
     outputTagList =
         algorithmNameList.stream()
-            .map(algorithmName -> new OutputTag<BeamData>(algorithmName) {
-              private static final long serialVersionUID = 1745268980889408883L;
-            })
+            .map(
+                algorithmName ->
+                    new OutputTag<BeamData>(algorithmName) {
+                      private static final long serialVersionUID = 1745268980889408883L;
+                    })
             .collect(Collectors.toList());
   }
 
@@ -46,12 +46,13 @@ public class GroupBeamOperator
       Iterable<ChannelBeamData> elements,
       Collector<BeamData> collector)
       throws Exception {
-    List<ChannelBeamData> channelBeamDataList = StreamSupport.stream(elements.spliterator(), false)
-            .collect(Collectors.toList());
-    LOGGER.info("group beam operator got {} items, and it contains {} and array length is {}",
-            channelBeamDataList.size(),
-            channelBeamDataList.get(0),
-            channelBeamDataList.get(0).getRealArray().length);
+    List<ChannelBeamData> channelBeamDataList =
+        StreamSupport.stream(elements.spliterator(), false).collect(Collectors.toList());
+    LOGGER.info(
+        "group beam operator got {} items, and it contains {} and array length is {}",
+        channelBeamDataList.size(),
+        channelBeamDataList.get(0),
+        channelBeamDataList.get(0).getRealArray().length);
 
     BeamData beamData =
         BeamData.builder()

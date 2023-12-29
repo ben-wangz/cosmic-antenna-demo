@@ -24,9 +24,10 @@ public class ChannelDataParser implements FlatMapFunction<AntennaData, ChannelAn
 
   @Builder
   @Jacksonized
-  public ChannelDataParser(@NonNull Integer timeSampleUnitSize,
-                           @NonNull Integer timeSampleSize,
-                           @NonNull Integer channelSize) {
+  public ChannelDataParser(
+      @NonNull Integer timeSampleUnitSize,
+      @NonNull Integer timeSampleSize,
+      @NonNull Integer channelSize) {
     this.timeSampleUnitSize = timeSampleUnitSize;
     this.timeSampleSize = timeSampleSize;
     this.channelSize = channelSize;
@@ -35,25 +36,32 @@ public class ChannelDataParser implements FlatMapFunction<AntennaData, ChannelAn
   @Override
   public void flatMap(AntennaData antennaData, Collector<ChannelAntennaData> collector)
       throws Exception {
-    LOGGER.debug("before channel data parse, original info [length:{}, header:{}]",
-            antennaData.getRealArray().length,
-            Arrays.toString(Arrays.copyOfRange(antennaData.getRealArray(), 0, 10)));
+    LOGGER.debug(
+        "before channel data parse, original info [length:{}, header:{}]",
+        antennaData.getRealArray().length,
+        Arrays.toString(Arrays.copyOfRange(antennaData.getRealArray(), 0, 10)));
     for (int channelId = 0; channelId < channelSize; channelId++) {
       int startIndex = channelId * timeSampleSize;
       int endIndex = startIndex + timeSampleSize;
-      LOGGER.debug("during parse channel data -> channelId {}, extract index: [{},{})", channelId, startIndex, endIndex);
-      ChannelAntennaData channelAntennaData = ChannelAntennaData.builder()
+      LOGGER.debug(
+          "during parse channel data -> channelId {}, extract index: [{},{})",
+          channelId,
+          startIndex,
+          endIndex);
+      ChannelAntennaData channelAntennaData =
+          ChannelAntennaData.builder()
               .channelId(channelId)
               .antennaId(antennaData.getAntennaId())
               .counter(antennaData.getPackageCounter() * (timeSampleSize / timeSampleUnitSize))
               .realArray(Arrays.copyOfRange(antennaData.getRealArray(), startIndex, endIndex))
               .imaginaryArray(
-                      Arrays.copyOfRange(antennaData.getImaginaryArray(), startIndex, endIndex))
+                  Arrays.copyOfRange(antennaData.getImaginaryArray(), startIndex, endIndex))
               .build();
-      LOGGER.debug("after channel data  parse, got object -> {}, array info[length:{}, header:{}]",
-              channelAntennaData,
-              channelAntennaData.getRealArray().length,
-              Arrays.toString(Arrays.copyOfRange(channelAntennaData.getRealArray(), 0, 10)));
+      LOGGER.debug(
+          "after channel data  parse, got object -> {}, array info[length:{}, header:{}]",
+          channelAntennaData,
+          channelAntennaData.getRealArray().length,
+          Arrays.toString(Arrays.copyOfRange(channelAntennaData.getRealArray(), 0, 10)));
       collector.collect(channelAntennaData);
     }
   }

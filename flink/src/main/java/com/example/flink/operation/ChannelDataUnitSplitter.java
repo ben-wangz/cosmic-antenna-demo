@@ -29,7 +29,10 @@ public class ChannelDataUnitSplitter implements FlatMapFunction<ChannelData, Cha
 
   @Override
   public void flatMap(ChannelData channelData, Collector<ChannelData> collector) throws Exception {
-    LOGGER.info("before channel data unit split -> {}, data length {}", channelData, channelData.getRealArray().length);
+    LOGGER.info(
+        "before channel data unit split -> {}, data length {}",
+        channelData,
+        channelData.getRealArray().length);
     int unitValueSize = antennaSize * timeSampleUnitSize;
     for (int unitIndex = 0; unitIndex < timeSampleSize / timeSampleUnitSize; unitIndex++) {
       byte[] realArray = new byte[unitValueSize];

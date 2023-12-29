@@ -24,14 +24,15 @@ public class FPGAMockClientApp {
     int interval =
         Optional.ofNullable(System.getenv("RECORD_INTERVAL")).map(Integer::parseInt).orElse(1000);
     int channelSize =
-            Optional.ofNullable(System.getenv("CHANNEL_SIZE")).map(Integer::parseInt).orElse(10);
+        Optional.ofNullable(System.getenv("CHANNEL_SIZE")).map(Integer::parseInt).orElse(10);
     int timeSampleSize =
-            Optional.ofNullable(System.getenv("TIME_SAMPLE_SIZE")).map(Integer::parseInt).orElse(16);
+        Optional.ofNullable(System.getenv("TIME_SAMPLE_SIZE")).map(Integer::parseInt).orElse(16);
     int dataChunkSize =
-        Optional.ofNullable(System.getenv("DATA_CHUNK_SIZE")).map(Integer::parseInt)
-                .orElse(channelSize * timeSampleSize);
-    int antennaStartIndex = Optional.ofNullable(System.getenv("ANTENNA_START_INDEX"))
-            .map(Integer::parseInt).orElse(0);
+        Optional.ofNullable(System.getenv("DATA_CHUNK_SIZE"))
+            .map(Integer::parseInt)
+            .orElse(channelSize * timeSampleSize);
+    int antennaStartIndex =
+        Optional.ofNullable(System.getenv("ANTENNA_START_INDEX")).map(Integer::parseInt).orElse(0);
     try (FPGAMockClient client = FPGAMockClient.builder().port(port).build()) {
       ChannelFuture channelFuture = client.startup(host);
       LOGGER.info(
@@ -39,12 +40,14 @@ public class FPGAMockClientApp {
           host,
           port,
           count,
-          interval, dataChunkSize * 2 + 8);
+          interval,
+          dataChunkSize * 2 + 8);
       for (long index = count; index != 0; index--) {
         if (channelFuture.isSuccess()) {
           channelFuture
               .channel()
-              .writeAndFlush(Unpooled.wrappedBuffer(randomRecord(antennaStartIndex, dataChunkSize)));
+              .writeAndFlush(
+                  Unpooled.wrappedBuffer(randomRecord(antennaStartIndex, dataChunkSize)));
         }
         Thread.sleep(interval);
       }
@@ -60,10 +63,10 @@ public class FPGAMockClientApp {
     byteBuffer.put(ByteBuffer.allocate(1).put(antennaId).array());
 
     LOGGER.info(
-            "Sent antennaId:{}, counter:{}, size of array:{} ",
-            antennaId & 0xFF,
-            counter,
-            dataChunkSize);
+        "Sent antennaId:{}, counter:{}, size of array:{} ",
+        antennaId & 0xFF,
+        counter,
+        dataChunkSize);
 
     byteBuffer.put(longToBytes(counter++));
 
@@ -77,7 +80,7 @@ public class FPGAMockClientApp {
   public static byte[] longToBytes(long l) {
     byte[] result = new byte[7];
     for (int i = 6; i >= 0; i--) {
-      result[i] = (byte)(l & 0xFF);
+      result[i] = (byte) (l & 0xFF);
       l >>= Byte.SIZE;
     }
     return result;
