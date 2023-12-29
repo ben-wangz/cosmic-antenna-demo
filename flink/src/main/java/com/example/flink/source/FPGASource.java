@@ -76,7 +76,7 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
                 });
           }
         });
-    ChannelFuture channelFuture = serverBootstrap.bind(0).sync();
+    ChannelFuture channelFuture = serverBootstrap.bind(18888).sync();
     LOGGER.info(
         "inner netty server started at {}",
         ((InetSocketAddress) channelFuture.channel().localAddress()).getPort());
