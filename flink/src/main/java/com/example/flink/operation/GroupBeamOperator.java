@@ -25,10 +25,15 @@ public class GroupBeamOperator
   private static final long serialVersionUID = -7828810423206304103L;
   private static final Logger LOGGER = LoggerFactory.getLogger(GroupBeamOperator.class);
   private final List<OutputTag<BeamData>> outputTagList;
+  private final Integer channelSize;
+  private final Integer timeSampleSize;
 
   @Builder
   @Jacksonized
-  public GroupBeamOperator(List<String> algorithmNameList) {
+  public GroupBeamOperator(
+      Integer channelSize, Integer timeSampleSize, List<String> algorithmNameList) {
+    this.channelSize = channelSize;
+    this.timeSampleSize = timeSampleSize;
     outputTagList =
         algorithmNameList.stream()
             .map(
@@ -54,11 +59,30 @@ public class GroupBeamOperator
         channelBeamDataList.get(0),
         channelBeamDataList.get(0).getRealArray().length);
 
+    int length = channelSize * timeSampleSize;
+    byte[] realArray = new byte[length];
+    byte[] imaginaryArray = new byte[length];
+    channelBeamDataList.forEach(
+        channelBeamData -> {
+          Integer channelId = channelBeamData.getChannelId();
+          System.arraycopy(
+              channelBeamData.getRealArray(),
+              0,
+              realArray,
+              channelId * timeSampleSize,
+              timeSampleSize);
+          System.arraycopy(
+              channelBeamData.getImaginaryArray(),
+              0,
+              imaginaryArray,
+              channelId * timeSampleSize,
+              timeSampleSize);
+        });
     BeamData beamData =
         BeamData.builder()
             .beamId(channelBeamDataList.get(0).getBeamId())
-            .realArray(channelBeamDataList.get(0).getRealArray())
-            .imaginaryArray(channelBeamDataList.get(0).getImaginaryArray())
+            .realArray(realArray)
+            .imaginaryArray(imaginaryArray)
             .build();
     for (OutputTag<BeamData> outputTag : outputTagList) {
       context.output(outputTag, beamData);

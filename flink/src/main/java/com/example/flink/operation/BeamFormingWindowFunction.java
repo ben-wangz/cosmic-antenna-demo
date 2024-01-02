@@ -90,10 +90,6 @@ public class BeamFormingWindowFunction
         ChannelData unitChannelData = indexedChannelData.get(startCounterOfWindow + unitIndex);
         // missing data will be interpreted with 0
         if (null == unitChannelData) {
-          LOGGER.warn(
-              "cannot get indexed channel data{}, since indexedChannelData.keys -> {}",
-              startCounterOfWindow + unitIndex,
-              indexedChannelData.keySet());
           continue;
         }
         LOGGER.debug(

@@ -41,6 +41,8 @@ public class CosmicAntennaApp {
     executionConfig.setAutoWatermarkInterval(1000L);
     GroupBeamOperator groupBeamOperator =
         GroupBeamOperator.builder()
+            .channelSize(channelSize)
+            .timeSampleSize(timeSampleSize)
             .algorithmNameList(
                 IntStream.range(0, 3)
                     .mapToObj(index -> RandomStringUtils.randomAlphabetic(8))
