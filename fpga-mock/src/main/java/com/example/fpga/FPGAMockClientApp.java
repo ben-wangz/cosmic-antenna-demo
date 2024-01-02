@@ -59,7 +59,7 @@ public class FPGAMockClientApp {
     byte[] resultArray = new byte[8 + dataChunkSize * 2];
     ByteBuffer byteBuffer = ByteBuffer.wrap(resultArray);
 
-    byte antennaId = (byte) random.nextInt(antennaStartIndex + 8);
+    byte antennaId = (byte) (random.nextInt( 8) + antennaStartIndex);
     byteBuffer.put(ByteBuffer.allocate(1).put(antennaId).array());
 
     LOGGER.info(
