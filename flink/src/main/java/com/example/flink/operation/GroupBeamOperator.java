@@ -56,7 +56,9 @@ public class GroupBeamOperator
 
     BeamData beamData =
         BeamData.builder()
-            // TODO construct BeamData
+            .beamId(channelBeamDataList.get(0).getBeamId())
+            .realArray(channelBeamDataList.get(0).getRealArray())
+            .imaginaryArray(channelBeamDataList.get(0).getImaginaryArray())
             .build();
     for (OutputTag<BeamData> outputTag : outputTagList) {
       context.output(outputTag, beamData);

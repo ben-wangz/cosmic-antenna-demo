@@ -44,8 +44,9 @@ public class ChannelDataParser implements FlatMapFunction<AntennaData, ChannelAn
       int startIndex = channelId * timeSampleSize;
       int endIndex = startIndex + timeSampleSize;
       LOGGER.debug(
-          "during parse channel data -> channelId {}, extract index: [{},{})",
+          "during parse channel data -> channelId {}, antennaId {}, extract index: [{},{})",
           channelId,
+          antennaData.getAntennaId(),
           startIndex,
           endIndex);
       ChannelAntennaData channelAntennaData =

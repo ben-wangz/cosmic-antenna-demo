@@ -21,7 +21,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.FileUtils;
 import org.apache.flink.util.OutputTag;
@@ -38,7 +38,7 @@ public class CosmicAntennaApp {
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     ExecutionConfig executionConfig = env.getConfig();
     executionConfig.setGlobalJobParameters(configuration);
-    executionConfig.setAutoWatermarkInterval(20000L);
+    executionConfig.setAutoWatermarkInterval(1000L);
     GroupBeamOperator groupBeamOperator =
         GroupBeamOperator.builder()
             .algorithmNameList(
@@ -52,8 +52,8 @@ public class CosmicAntennaApp {
             .assignTimestampsAndWatermarks(
                 WatermarkStrategy.<AntennaData>forBoundedOutOfOrderness(
                         // TODO configure duration
-                        Duration.ofSeconds(timeSampleSize))
-                    // TODO package counter should multiply with iteration count: redis counter++?
+                        Duration.ofSeconds(1L))
+                    // TODO package counter should multiply with iteration count: redis counter++
                     .withTimestampAssigner(
                         (antennaData, timestamp) ->
                             antennaData.getPackageCounter()
@@ -64,9 +64,9 @@ public class CosmicAntennaApp {
                     .timeSampleSize(timeSampleSize)
                     .timeSampleUnitSize(timeSampleUnitSize)
                     .build())
-            .keyBy(ChannelAntennaData::getChannelId)
+            .keyBy((KeySelector<ChannelAntennaData, Integer>) ChannelAntennaData::getChannelId )
             .window(
-                TumblingProcessingTimeWindows.of(Time.milliseconds(timeSampleSize / timeSampleUnitSize)))
+                TumblingEventTimeWindows.of(Time.milliseconds(timeSampleSize / timeSampleUnitSize)))
             .aggregate(
                 ChannelMerge.builder()
                     .timeSampleSize(timeSampleSize)

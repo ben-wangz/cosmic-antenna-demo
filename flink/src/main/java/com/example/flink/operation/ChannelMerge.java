@@ -57,7 +57,7 @@ public class ChannelMerge
     Long counter = channelAntennaData.getCounter();
     Integer accumulatorChannelId = channelDataFromAcc.getChannelId();
     Long accumulatorCounter = channelDataFromAcc.getCounter();
-    LOGGER.info(
+    LOGGER.debug(
         "going to add two channel antenna data -> {}[length:{} header:{}] and acc -> {}[length:{}"
             + " header:{}]",
         channelAntennaData,
@@ -97,7 +97,7 @@ public class ChannelMerge
         channelDataFromAcc.getImaginaryArray(),
         startIndex,
         timeSampleSize);
-    LOGGER.info(
+    LOGGER.debug(
         "after adding return acc -> {}[length:{}, all:{}]",
         accumulator,
         accumulator.getChannelData().getRealArray().length,
@@ -112,7 +112,6 @@ public class ChannelMerge
 
   @Override
   public ChannelDataACC merge(ChannelDataACC accLeft, ChannelDataACC accRight) {
-    LOGGER.info("acc merge ... ");
     ChannelData channelDataFromAccLeft = accLeft.getChannelData();
     ChannelData channelDataFromAccRight = accRight.getChannelData();
     Integer channelIdLeft = channelDataFromAccLeft.getChannelId();
@@ -136,6 +135,7 @@ public class ChannelMerge
     ChannelData channelDataMerged = channelDataFromAccLeft.toBuilder().build();
     for (Integer gatheredAntennaId : accRight.getGatheredAntennaIdSet()) {
       int startIndex = gatheredAntennaId * timeSampleSize;
+      accLeft.getGatheredAntennaIdSet().add(gatheredAntennaId);
       System.arraycopy(
           channelDataFromAccRight.getRealArray(),
           startIndex,
@@ -149,8 +149,6 @@ public class ChannelMerge
           startIndex,
           timeSampleSize);
     }
-    LOGGER.info(
-        "after channel merge, data array length is {}", channelDataMerged.getRealArray().length);
     return ChannelDataACC.builder()
         .gatheredAntennaIdSet(
             Stream.of(accLeft.getGatheredAntennaIdSet(), accRight.getGatheredAntennaIdSet())
