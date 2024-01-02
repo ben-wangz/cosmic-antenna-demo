@@ -1,6 +1,7 @@
 package com.example.flink.operation;
 
 import com.example.flink.data.ChannelData;
+import java.util.Arrays;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -9,8 +10,6 @@ import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
 
 @EqualsAndHashCode
 @ToString

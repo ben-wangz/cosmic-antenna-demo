@@ -64,7 +64,7 @@ public class CosmicAntennaApp {
                     .timeSampleSize(timeSampleSize)
                     .timeSampleUnitSize(timeSampleUnitSize)
                     .build())
-            .keyBy((KeySelector<ChannelAntennaData, Integer>) ChannelAntennaData::getChannelId )
+            .keyBy((KeySelector<ChannelAntennaData, Integer>) ChannelAntennaData::getChannelId)
             .window(
                 TumblingEventTimeWindows.of(Time.milliseconds(timeSampleSize / timeSampleUnitSize)))
             .aggregate(
