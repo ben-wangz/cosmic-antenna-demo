@@ -12,17 +12,17 @@ public class CosmicAntennaConf {
   public static final ConfigOption<Integer> TIME_SAMPLE_SIZE =
       ConfigOptions.key("cosmic.antenna.app.timeSample.size")
           .intType()
-          .defaultValue(4)
+          .defaultValue(16)
           .withDescription("number of time samples in one package from FPGA");
   public static final ConfigOption<Integer> TIME_SAMPLE_UNIT_SIZE =
       ConfigOptions.key("cosmic.antenna.app.timeSampleUnit.size")
           .intType()
-          .defaultValue(4)
+          .defaultValue(8)
           .withDescription("minimum number of time samples in the whole system");
   public static final ConfigOption<Integer> BEAM_FORMING_WINDOW_SIZE =
       ConfigOptions.key("cosmic.antenna.app.beamForming.windowSize")
           .intType()
-          .defaultValue(10)
+          .defaultValue(2)
           .withDescription("beam forming window size");
   public static final ConfigOption<Integer> FPGA_SOURCE_PARALLELISM =
       ConfigOptions.key("cosmic.antenna.app.source.parallelism")
@@ -37,7 +37,7 @@ public class CosmicAntennaConf {
   public static final ConfigOption<Integer> CHANNEL_SIZE =
       ConfigOptions.key("cosmic.antenna.fpga.channel.size")
           .intType()
-          .defaultValue(1000)
+          .defaultValue(10)
           .withDescription("number of channels in one package from FPGA");
   public static final ConfigOption<Integer> ANTENNA_SIZE =
       ConfigOptions.key("cosmic.antenna.fpga.antenna.size")
@@ -52,7 +52,8 @@ public class CosmicAntennaConf {
   public static final ConfigOption<String> COEFFICIENT_DATA_PATH =
       ConfigOptions.key("cosmic.antenna.coefficient.data.path")
           .stringType()
-          .defaultValue("coefficient/")
+          .defaultValue(
+              "C:\\Users\\Administrator\\AppData\\Local\\Temp\\cosmic-antenna4896456594933226445")
           .withDescription("path to coefficient data file");
 
   public static class ConfigurationBuilder {

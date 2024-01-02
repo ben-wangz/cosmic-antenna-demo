@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 public class FPGASource extends RichParallelSourceFunction<AntennaData> {
   private static final Logger LOGGER = LoggerFactory.getLogger(FPGASource.class);
   private static final String BLOCK_HANDLER = "BLOCK-HANDLER";
+  private static final long serialVersionUID = -4102927494134535194L;
 
   private transient int packageHeaderSize;
   private transient int packageDataSize;
@@ -75,7 +76,7 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
                 });
           }
         });
-    ChannelFuture channelFuture = serverBootstrap.bind(0).sync();
+    ChannelFuture channelFuture = serverBootstrap.bind(18888).sync();
     LOGGER.info(
         "inner netty server started at {}",
         ((InetSocketAddress) channelFuture.channel().localAddress()).getPort());

@@ -39,7 +39,7 @@ public class MessageDecoder extends MessageToMessageDecoder<DatagramPacket> {
     ByteBuf input = datagramPacket.content();
     int packageSize = input.readableBytes();
     if (packageSize <= 0) {
-      LOGGER.warn("Got empty UDP package");
+      LOGGER.warn("got an empty UDP package, please check client");
       return;
     }
     if ((headerSize + dataSize) != packageSize) {

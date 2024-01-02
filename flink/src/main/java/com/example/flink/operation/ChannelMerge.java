@@ -3,6 +3,7 @@ package com.example.flink.operation;
 import com.example.flink.data.ChannelAntennaData;
 import com.example.flink.data.ChannelData;
 import com.example.flink.data.ChannelDataACC;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -14,11 +15,14 @@ import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.util.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @EqualsAndHashCode
 @ToString
 public class ChannelMerge
     implements AggregateFunction<ChannelAntennaData, ChannelDataACC, ChannelData> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ChannelMerge.class);
   private static final long serialVersionUID = -4045304070063939211L;
   private final Integer timeSampleSize;
   private final Integer antennaSize;
@@ -48,10 +52,20 @@ public class ChannelMerge
   @Override
   public ChannelDataACC add(ChannelAntennaData channelAntennaData, ChannelDataACC accumulator) {
     ChannelData channelDataFromAcc = accumulator.getChannelData();
+    accumulator.getGatheredAntennaIdSet().add(channelAntennaData.getAntennaId());
     Integer channelId = channelAntennaData.getChannelId();
     Long counter = channelAntennaData.getCounter();
     Integer accumulatorChannelId = channelDataFromAcc.getChannelId();
     Long accumulatorCounter = channelDataFromAcc.getCounter();
+    LOGGER.debug(
+        "going to add two channel antenna data -> {}[length:{} header:{}] and acc -> {}[length:{}"
+            + " header:{}]",
+        channelAntennaData,
+        channelAntennaData.getRealArray().length,
+        Arrays.toString(Arrays.copyOfRange(channelAntennaData.getRealArray(), 0, 10)),
+        accumulator,
+        accumulator.getChannelData().getRealArray().length,
+        Arrays.toString(Arrays.copyOfRange(accumulator.getChannelData().getRealArray(), 0, 10)));
     if (-1 == accumulatorChannelId) {
       channelDataFromAcc.setChannelId(channelId);
     } else {
@@ -83,6 +97,11 @@ public class ChannelMerge
         channelDataFromAcc.getImaginaryArray(),
         startIndex,
         timeSampleSize);
+    LOGGER.debug(
+        "after adding return acc -> {}[length:{}, all:{}]",
+        accumulator,
+        accumulator.getChannelData().getRealArray().length,
+        Arrays.toString(accumulator.getChannelData().getRealArray()));
     return accumulator;
   }
 
@@ -116,6 +135,7 @@ public class ChannelMerge
     ChannelData channelDataMerged = channelDataFromAccLeft.toBuilder().build();
     for (Integer gatheredAntennaId : accRight.getGatheredAntennaIdSet()) {
       int startIndex = gatheredAntennaId * timeSampleSize;
+      accLeft.getGatheredAntennaIdSet().add(gatheredAntennaId);
       System.arraycopy(
           channelDataFromAccRight.getRealArray(),
           startIndex,

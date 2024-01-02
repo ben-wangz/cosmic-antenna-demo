@@ -1,14 +1,16 @@
 package com.example.flink;
 
-import static com.example.flink.util.CoefficientDataUtil.*;
-
 import com.example.flink.data.*;
 import com.example.flink.operation.*;
 import com.example.flink.sink.JsonLogSink;
 import com.example.flink.source.FPGASource;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -19,32 +21,28 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.FileUtils;
 import org.apache.flink.util.OutputTag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CosmicAntennaApp {
-  private static final Logger LOGGER = LoggerFactory.getLogger(CosmicAntennaApp.class);
-
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   public static void main(String[] args) throws Exception {
     Configuration configuration = CosmicAntennaConf.ConfigurationBuilder.build();
-    Path tempDir =
-        generateCoefficientDataFile(configuration.getInteger(CosmicAntennaConf.CHANNEL_SIZE));
-    configuration.set(CosmicAntennaConf.COEFFICIENT_DATA_PATH, tempDir.toString());
+    int channelSize = configuration.getInteger(CosmicAntennaConf.CHANNEL_SIZE);
     int timeSampleSize = configuration.getInteger(CosmicAntennaConf.TIME_SAMPLE_SIZE);
     int timeSampleUnitSize = configuration.getInteger(CosmicAntennaConf.TIME_SAMPLE_UNIT_SIZE);
-    int beamFormingWindowSize =
-        configuration.getInteger(CosmicAntennaConf.BEAM_FORMING_WINDOW_SIZE);
+    int antennaSize = configuration.getInteger(CosmicAntennaConf.ANTENNA_SIZE);
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     ExecutionConfig executionConfig = env.getConfig();
     executionConfig.setGlobalJobParameters(configuration);
-    executionConfig.setAutoWatermarkInterval(20000L);
+    executionConfig.setAutoWatermarkInterval(1000L);
     GroupBeamOperator groupBeamOperator =
         GroupBeamOperator.builder()
+            .channelSize(channelSize)
+            .timeSampleSize(timeSampleSize)
             .algorithmNameList(
                 IntStream.range(0, 3)
                     .mapToObj(index -> RandomStringUtils.randomAlphabetic(8))
@@ -56,29 +54,29 @@ public class CosmicAntennaApp {
             .assignTimestampsAndWatermarks(
                 WatermarkStrategy.<AntennaData>forBoundedOutOfOrderness(
                         // TODO configure duration
-                        Duration.ofSeconds(timeSampleSize))
-                    // TODO package counter should multiply with iteration count: redis counter++?
+                        Duration.ofSeconds(1L))
+                    // TODO package counter should multiply with iteration count: redis counter++
                     .withTimestampAssigner(
                         (antennaData, timestamp) ->
                             antennaData.getPackageCounter()
-                                / (timeSampleSize / timeSampleUnitSize)))
+                                * (timeSampleSize / timeSampleUnitSize)))
             .flatMap(
                 ChannelDataParser.builder()
-                    .channelSize(configuration.getInteger(CosmicAntennaConf.CHANNEL_SIZE))
-                    .timeSampleSize(configuration.getInteger(CosmicAntennaConf.TIME_SAMPLE_SIZE))
+                    .channelSize(channelSize)
+                    .timeSampleSize(timeSampleSize)
+                    .timeSampleUnitSize(timeSampleUnitSize)
                     .build())
-            .keyBy(ChannelAntennaData::getChannelId)
+            .keyBy((KeySelector<ChannelAntennaData, Integer>) ChannelAntennaData::getChannelId)
             .window(
-                SlidingEventTimeWindows.of(
-                    // TODO configure window size
-                    Time.milliseconds(timeSampleSize), Time.milliseconds(timeSampleSize)))
+                TumblingEventTimeWindows.of(Time.milliseconds(timeSampleSize / timeSampleUnitSize)))
             .aggregate(
                 ChannelMerge.builder()
                     .timeSampleSize(timeSampleSize)
-                    .antennaSize(configuration.getInteger(CosmicAntennaConf.ANTENNA_SIZE))
+                    .antennaSize(antennaSize)
                     .build())
             .flatMap(
                 ChannelDataUnitSplitter.builder()
+                    .antennaSize(antennaSize)
                     .timeSampleSize(timeSampleSize)
                     .timeSampleUnitSize(timeSampleUnitSize)
                     .build())
@@ -88,11 +86,12 @@ public class CosmicAntennaApp {
                     Time.milliseconds(timeSampleSize), Time.milliseconds(timeSampleSize)))
             .apply(
                 BeamFormingWindowFunction.builder()
-                    .channelSize(configuration.getInteger(CosmicAntennaConf.CHANNEL_SIZE))
+                    .channelSize(channelSize)
                     .beamSize(configuration.getInteger(CosmicAntennaConf.BEAM_SIZE))
-                    .antennaSize(configuration.getInteger(CosmicAntennaConf.ANTENNA_SIZE))
+                    .antennaSize(antennaSize)
                     .timeSampleUnitSize(timeSampleUnitSize)
-                    .beamFormingWindowSize(beamFormingWindowSize)
+                    .beamFormingWindowSize(
+                        configuration.getInteger(CosmicAntennaConf.BEAM_FORMING_WINDOW_SIZE))
                     .coefficientDataList(
                         retrieveCoefficientDataList(
                             configuration.getString(CosmicAntennaConf.COEFFICIENT_DATA_PATH)))
@@ -111,6 +110,24 @@ public class CosmicAntennaApp {
           .name(outputTag.toString() + "_sink");
     }
     env.execute("transform example of sensor reading");
-    FileUtils.deleteDirectoryQuietly(tempDir.toFile());
+  }
+
+  public static List<CoefficientData> retrieveCoefficientDataList(String dirPath)
+      throws IOException {
+    Collection<Path> dataFiles =
+        FileUtils.listFilesInDirectory(
+            Path.of(dirPath),
+            path -> path.getFileName().toString().startsWith(CoefficientDataGenerator.FILE_PREFIX));
+    return dataFiles.stream()
+        .map(
+            file -> {
+              try {
+                return OBJECT_MAPPER.readValue(
+                    file.toFile(), new TypeReference<CoefficientData>() {});
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+            })
+        .collect(Collectors.toList());
   }
 }
