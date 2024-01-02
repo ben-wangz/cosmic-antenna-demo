@@ -21,7 +21,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.FileUtils;
 import org.apache.flink.util.OutputTag;
@@ -66,7 +66,7 @@ public class CosmicAntennaApp {
                     .build())
             .keyBy(ChannelAntennaData::getChannelId)
             .window(
-                TumblingEventTimeWindows.of(Time.milliseconds(timeSampleSize / timeSampleUnitSize)))
+                TumblingProcessingTimeWindows.of(Time.milliseconds(timeSampleSize / timeSampleUnitSize)))
             .aggregate(
                 ChannelMerge.builder()
                     .timeSampleSize(timeSampleSize)
