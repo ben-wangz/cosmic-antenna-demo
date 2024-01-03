@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -19,6 +20,7 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 import org.bytedeco.opencv.global.opencv_core;
 import org.bytedeco.opencv.opencv_core.Mat;
+import org.bytedeco.opencv.opencv_core.MatVector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,6 +117,7 @@ public class BeamFormingWindowFunction
         coefficientRealMat.rows(),
         coefficientRealMat.cols(),
         coefficientRealMat.total());
+    LOGGER.debug("before initialize channel data , the real array length -> {}, beamFormingWindowSize -> {}", length, beamFormingWindowSize);
     ChannelData mergedChannelData =
         ChannelData.builder()
             .channelId(channelId)
@@ -122,42 +125,46 @@ public class BeamFormingWindowFunction
             .realArray(realArray)
             .imaginaryArray(imaginaryArray)
             .build();
-    try (Mat dataRealMat = new Mat(antennaSize, timeSampleUnitSize, opencv_core.CV_64FC1);
-        Mat dataImaginaryMat = new Mat(antennaSize, timeSampleUnitSize, opencv_core.CV_64FC1)) {
+    try (Mat dataRealMat = new Mat(antennaSize, timeSampleUnitSize, opencv_core.CV_64FC(beamFormingWindowSize));
+        Mat dataImaginaryMat = new Mat(antennaSize, timeSampleUnitSize, opencv_core.CV_64FC(beamFormingWindowSize))) {
 
       dataRealMat.data().put(mergedChannelData.getRealArray());
       dataImaginaryMat.data().put(mergedChannelData.getImaginaryArray());
       LOGGER.debug(
-          "created a data real Mat({}, {}), containing {} elements.",
+          "created a data real Mat({}, {}), containing {} channels and {} elements.",
           dataRealMat.rows(),
           dataRealMat.cols(),
-          dataRealMat.total()); // 224, 8
+          dataRealMat.channels(),
+          dataRealMat.total()); // 224, 8, beamFormingSize
       LOGGER.debug(
-          "created a data imaginary Mat({}, {}), containing {} elements.",
+          "created a data imaginary Mat({}, {}), containing {} channels and {} elements.",
           dataImaginaryMat.rows(),
           dataImaginaryMat.cols(),
+          dataImaginaryMat.channels(),
           dataImaginaryMat.total());
       Mat realMat =
           opencv_core
               .add(
-                  opencv_core.multiply(coefficientRealMat, dataRealMat),
-                  opencv_core.multiply(coefficientImaginaryMat, dataImaginaryMat))
+                      matrixMultiplyWithDifferentChannel(coefficientRealMat, dataRealMat),
+                      matrixMultiplyWithDifferentChannel(coefficientImaginaryMat, dataImaginaryMat))
               .asMat();
       Mat imaginaryMat =
           opencv_core
               .add(
-                  opencv_core.multiply(coefficientRealMat, dataImaginaryMat),
-                  opencv_core.multiply(coefficientImaginaryMat, dataRealMat))
+                      matrixMultiplyWithDifferentChannel(coefficientRealMat, dataImaginaryMat),
+                      matrixMultiplyWithDifferentChannel(coefficientImaginaryMat, dataRealMat))
               .asMat();
       LOGGER.debug(
-          "created a result real Mat({}, {}), containing {} elements.",
+          "created a result real Mat({}, {}), containing {} channels and {} elements.",
           realMat.rows(),
           realMat.cols(),
-          realMat.total()); // 180, 8
+          realMat.channels(),
+          realMat.total()); // 180, 8, beamFormingSize
       LOGGER.debug(
-          "created a result imaginary Mat({}, {}), containing {} elements.",
+          "created a result imaginary Mat({}, {}), containing {} channels and {} elements.",
           imaginaryMat.rows(),
           imaginaryMat.cols(),
+          imaginaryMat.channels(),
           imaginaryMat.total());
       int channelBeamDataLength = timeSampleUnitSize * beamFormingWindowSize;
       Preconditions.checkArgument(
@@ -191,6 +198,23 @@ public class BeamFormingWindowFunction
                 .build());
       }
     }
+  }
+
+  private Mat matrixMultiplyWithDifferentChannel(Mat oneChannelMat, Mat multipleChannelMat){
+    Mat result = new Mat(oneChannelMat.rows(),multipleChannelMat.cols(),
+            opencv_core.CV_64FC(multipleChannelMat.channels()));
+    MatVector resultVector = new MatVector();
+    try(MatVector matVector = new MatVector(multipleChannelMat.channels())){
+      opencv_core.split(multipleChannelMat, matVector);
+      IntStream.range(0, multipleChannelMat.channels()).boxed()
+              .forEach(index -> {
+                resultVector.push_back(
+                        opencv_core.multiply(oneChannelMat, matVector.get(index)).asMat()
+                );
+              });
+      opencv_core.merge(resultVector, result);
+    }
+    return result;
   }
 
   private void loadCoefficientMats(Integer channelId) {

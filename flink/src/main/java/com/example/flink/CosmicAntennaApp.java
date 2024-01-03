@@ -34,6 +34,7 @@ public class CosmicAntennaApp {
     int channelSize = configuration.getInteger(CosmicAntennaConf.CHANNEL_SIZE);
     int timeSampleSize = configuration.getInteger(CosmicAntennaConf.TIME_SAMPLE_SIZE);
     int timeSampleUnitSize = configuration.getInteger(CosmicAntennaConf.TIME_SAMPLE_UNIT_SIZE);
+    int beamFormingWindowSize = configuration.getInteger(CosmicAntennaConf.BEAM_FORMING_WINDOW_SIZE);
     int antennaSize = configuration.getInteger(CosmicAntennaConf.ANTENNA_SIZE);
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     ExecutionConfig executionConfig = env.getConfig();
@@ -83,22 +84,21 @@ public class CosmicAntennaApp {
             .keyBy((KeySelector<ChannelData, Integer>) ChannelData::getChannelId)
             .window(
                 SlidingEventTimeWindows.of(
-                    Time.milliseconds(timeSampleSize), Time.milliseconds(timeSampleSize)))
+                    Time.milliseconds((long) timeSampleUnitSize * beamFormingWindowSize),
+                        Time.milliseconds((long) timeSampleUnitSize * beamFormingWindowSize)))
             .apply(
                 BeamFormingWindowFunction.builder()
                     .channelSize(channelSize)
                     .beamSize(configuration.getInteger(CosmicAntennaConf.BEAM_SIZE))
                     .antennaSize(antennaSize)
                     .timeSampleUnitSize(timeSampleUnitSize)
-                    .beamFormingWindowSize(
-                        configuration.getInteger(CosmicAntennaConf.BEAM_FORMING_WINDOW_SIZE))
+                    .beamFormingWindowSize(beamFormingWindowSize)
                     .coefficientDataList(
                         retrieveCoefficientDataList(
                             configuration.getString(CosmicAntennaConf.COEFFICIENT_DATA_PATH)))
                     .build())
             .keyBy((KeySelector<ChannelBeamData, Integer>) ChannelBeamData::getBeamId)
             .window(
-                // TODO configure window size
                 SlidingEventTimeWindows.of(
                     Time.milliseconds(timeSampleSize), Time.milliseconds(timeSampleSize)))
             .process(groupBeamOperator);

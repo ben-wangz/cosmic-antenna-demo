@@ -53,7 +53,7 @@ public class GroupBeamOperator
       throws Exception {
     List<ChannelBeamData> channelBeamDataList =
         StreamSupport.stream(elements.spliterator(), false).collect(Collectors.toList());
-    LOGGER.info(
+    LOGGER.debug(
         "group beam operator got {} items, and it contains {} and array length is {}",
         channelBeamDataList.size(),
         channelBeamDataList.get(0),
