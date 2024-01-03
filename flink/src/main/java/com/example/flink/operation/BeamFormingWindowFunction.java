@@ -90,7 +90,6 @@ public class BeamFormingWindowFunction
             antennaIndex,
             startIndexOfUnitChannelData);
         ChannelData unitChannelData = indexedChannelData.get(startCounterOfWindow + unitIndex);
-        // missing data will be interpreted with 0
         if (null == unitChannelData) {
           continue;
         }
@@ -128,10 +127,11 @@ public class BeamFormingWindowFunction
             .realArray(realArray)
             .imaginaryArray(imaginaryArray)
             .build();
+    int channelBeamDataLength = timeSampleUnitSize * beamFormingWindowSize;
     try (Mat dataRealMat =
-            new Mat(antennaSize, timeSampleUnitSize, opencv_core.CV_64FC(beamFormingWindowSize));
+            new Mat(antennaSize, channelBeamDataLength, opencv_core.CV_64FC1);
         Mat dataImaginaryMat =
-            new Mat(antennaSize, timeSampleUnitSize, opencv_core.CV_64FC(beamFormingWindowSize))) {
+            new Mat(antennaSize, channelBeamDataLength, opencv_core.CV_64FC1)) {
 
       dataRealMat.data().put(mergedChannelData.getRealArray());
       dataImaginaryMat.data().put(mergedChannelData.getImaginaryArray());
@@ -150,16 +150,16 @@ public class BeamFormingWindowFunction
       Mat realMat =
           opencv_core
               .add(
-                  matrixMultiplyWithDifferentChannel(coefficientRealMat, dataRealMat),
-                  matrixMultiplyWithDifferentChannel(coefficientImaginaryMat, dataImaginaryMat))
+                  opencv_core.multiply(coefficientRealMat, dataRealMat),
+                  opencv_core.multiply(coefficientImaginaryMat, dataImaginaryMat))
               .asMat();
       Mat imaginaryMat =
           opencv_core
               .add(
-                  matrixMultiplyWithDifferentChannel(coefficientRealMat, dataImaginaryMat),
-                  matrixMultiplyWithDifferentChannel(coefficientImaginaryMat, dataRealMat))
+                  opencv_core.multiply(coefficientRealMat, dataImaginaryMat),
+                  opencv_core.multiply(coefficientImaginaryMat, dataRealMat))
               .asMat();
-      LOGGER.debug(
+      LOGGER.info(
           "created a result real Mat({}, {}), containing {} channels and {} elements.",
           realMat.rows(),
           realMat.cols(),
@@ -171,12 +171,12 @@ public class BeamFormingWindowFunction
           imaginaryMat.cols(),
           imaginaryMat.channels(),
           imaginaryMat.total());
-      int channelBeamDataLength = timeSampleUnitSize * beamFormingWindowSize;
+
       Preconditions.checkArgument(
           realMat.rows() == beamSize, "realMat.rows(%s) != beamSize(%s)", realMat.rows(), beamSize);
       Preconditions.checkArgument(
-          realMat.cols() == timeSampleUnitSize,
-          "realMat.cols(%s) != timeSampleUnitSize(%s)",
+          realMat.cols() == channelBeamDataLength,
+          "realMat.cols(%s) != channelBeamDataLength(%s)",
           realMat.cols(),
           channelBeamDataLength);
       Preconditions.checkArgument(
@@ -185,8 +185,8 @@ public class BeamFormingWindowFunction
           imaginaryMat.rows(),
           beamSize);
       Preconditions.checkArgument(
-          imaginaryMat.cols() == timeSampleUnitSize,
-          "imaginaryMat.cols(%s) != timeSampleUnitSize(%s)",
+          imaginaryMat.cols() == channelBeamDataLength,
+          "imaginaryMat.cols(%s) != channelBeamDataLength(%s)",
           imaginaryMat.cols(),
           channelBeamDataLength);
       for (int beamIndex = 0; beamIndex < beamSize; beamIndex++) {
@@ -203,27 +203,6 @@ public class BeamFormingWindowFunction
                 .build());
       }
     }
-  }
-
-  private Mat matrixMultiplyWithDifferentChannel(Mat oneChannelMat, Mat multipleChannelMat) {
-    Mat result =
-        new Mat(
-            oneChannelMat.rows(),
-            multipleChannelMat.cols(),
-            opencv_core.CV_64FC(multipleChannelMat.channels()));
-    MatVector resultVector = new MatVector();
-    try (MatVector matVector = new MatVector(multipleChannelMat.channels())) {
-      opencv_core.split(multipleChannelMat, matVector);
-      IntStream.range(0, multipleChannelMat.channels())
-          .boxed()
-          .forEach(
-              index -> {
-                resultVector.push_back(
-                    opencv_core.multiply(oneChannelMat, matVector.get(index)).asMat());
-              });
-      opencv_core.merge(resultVector, result);
-    }
-    return result;
   }
 
   private void loadCoefficientMats(Integer channelId) {
