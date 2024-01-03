@@ -1,19 +1,13 @@
 package com.example.flink;
 
-import com.example.flink.operation.BeamFormingWindowFunction;
+import java.util.Random;
 import org.bytedeco.opencv.global.opencv_core;
 import org.bytedeco.opencv.opencv_core.Mat;
-import org.bytedeco.opencv.opencv_core.MatExpr;
 import org.bytedeco.opencv.opencv_core.MatVector;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.stream.IntStream;
 
 public class MatrixMultiplyTest {
 
@@ -28,19 +22,19 @@ public class MatrixMultiplyTest {
 
   private static void printMatInfo(Mat mat) {
     LOGGER.info(
-            "Mat({}, {}), containing {} channels and each has {} elements, {} in total;",
-            mat.rows(),
-            mat.cols(),
-            mat.channels(),
-            mat.total(),
-            mat.channels() * mat.total());
+        "Mat({}, {}), containing {} channels and each has {} elements, {} in total;",
+        mat.rows(),
+        mat.cols(),
+        mat.channels(),
+        mat.total(),
+        mat.channels() * mat.total());
   }
 
   @Test
   public void testAdd() {
 
     try (Mat aMat = new Mat(row, col, opencv_core.CV_64FC(channel));
-         Mat bMat = new Mat(row, col, opencv_core.CV_64FC(channel))) {
+        Mat bMat = new Mat(row, col, opencv_core.CV_64FC(channel))) {
       byte[] abytes = new byte[row * col * channel];
       random.nextBytes(abytes);
       aMat.data().put(abytes);
@@ -51,10 +45,8 @@ public class MatrixMultiplyTest {
 
       Mat result = opencv_core.add(aMat, bMat).asMat();
       printMatInfo(result);
-
     }
   }
-
 
   @Test
   public void testMultiply() {
@@ -62,15 +54,14 @@ public class MatrixMultiplyTest {
     byte[] fixedMatData = new byte[180 * row];
     random.nextBytes(fixedMatData);
     try (Mat fixedMat = new Mat(180, row, opencv_core.CV_64FC1);
-         Mat aMat = new Mat(row, col, opencv_core.CV_64FC(channel))) {
+        Mat aMat = new Mat(row, col, opencv_core.CV_64FC(channel))) {
       fixedMat.data().put(fixedMatData);
       byte[] abytes = new byte[row * col * channel];
       random.nextBytes(abytes);
       aMat.data().put(abytes);
 
-      Assertions.assertThrows(RuntimeException.class,
-              () -> opencv_core.multiply(fixedMat, aMat).asMat());
-
+      Assertions.assertThrows(
+          RuntimeException.class, () -> opencv_core.multiply(fixedMat, aMat).asMat());
     }
   }
 
@@ -80,8 +71,8 @@ public class MatrixMultiplyTest {
     byte[] fixedMatData = new byte[180 * row];
     random.nextBytes(fixedMatData);
     try (Mat fixedMat = new Mat(180, row, opencv_core.CV_64FC1);
-         Mat aMat = new Mat(row, col, opencv_core.CV_64FC(channel));
-         Mat bMat = new Mat(180, col, opencv_core.CV_64FC(channel))) {
+        Mat aMat = new Mat(row, col, opencv_core.CV_64FC(channel));
+        Mat bMat = new Mat(180, col, opencv_core.CV_64FC(channel))) {
       fixedMat.data().put(fixedMatData);
       byte[] abytes = new byte[row * col * channel];
       random.nextBytes(abytes);
@@ -102,5 +93,4 @@ public class MatrixMultiplyTest {
       printMatInfo(bMat);
     }
   }
-
 }

@@ -117,7 +117,10 @@ public class BeamFormingWindowFunction
         coefficientRealMat.rows(),
         coefficientRealMat.cols(),
         coefficientRealMat.total());
-    LOGGER.debug("before initialize channel data , the real array length -> {}, beamFormingWindowSize -> {}", length, beamFormingWindowSize);
+    LOGGER.debug(
+        "before initialize channel data , the real array length -> {}, beamFormingWindowSize -> {}",
+        length,
+        beamFormingWindowSize);
     ChannelData mergedChannelData =
         ChannelData.builder()
             .channelId(channelId)
@@ -125,8 +128,10 @@ public class BeamFormingWindowFunction
             .realArray(realArray)
             .imaginaryArray(imaginaryArray)
             .build();
-    try (Mat dataRealMat = new Mat(antennaSize, timeSampleUnitSize, opencv_core.CV_64FC(beamFormingWindowSize));
-        Mat dataImaginaryMat = new Mat(antennaSize, timeSampleUnitSize, opencv_core.CV_64FC(beamFormingWindowSize))) {
+    try (Mat dataRealMat =
+            new Mat(antennaSize, timeSampleUnitSize, opencv_core.CV_64FC(beamFormingWindowSize));
+        Mat dataImaginaryMat =
+            new Mat(antennaSize, timeSampleUnitSize, opencv_core.CV_64FC(beamFormingWindowSize))) {
 
       dataRealMat.data().put(mergedChannelData.getRealArray());
       dataImaginaryMat.data().put(mergedChannelData.getImaginaryArray());
@@ -145,14 +150,14 @@ public class BeamFormingWindowFunction
       Mat realMat =
           opencv_core
               .add(
-                      matrixMultiplyWithDifferentChannel(coefficientRealMat, dataRealMat),
-                      matrixMultiplyWithDifferentChannel(coefficientImaginaryMat, dataImaginaryMat))
+                  matrixMultiplyWithDifferentChannel(coefficientRealMat, dataRealMat),
+                  matrixMultiplyWithDifferentChannel(coefficientImaginaryMat, dataImaginaryMat))
               .asMat();
       Mat imaginaryMat =
           opencv_core
               .add(
-                      matrixMultiplyWithDifferentChannel(coefficientRealMat, dataImaginaryMat),
-                      matrixMultiplyWithDifferentChannel(coefficientImaginaryMat, dataRealMat))
+                  matrixMultiplyWithDifferentChannel(coefficientRealMat, dataImaginaryMat),
+                  matrixMultiplyWithDifferentChannel(coefficientImaginaryMat, dataRealMat))
               .asMat();
       LOGGER.debug(
           "created a result real Mat({}, {}), containing {} channels and {} elements.",
@@ -200,17 +205,21 @@ public class BeamFormingWindowFunction
     }
   }
 
-  private Mat matrixMultiplyWithDifferentChannel(Mat oneChannelMat, Mat multipleChannelMat){
-    Mat result = new Mat(oneChannelMat.rows(),multipleChannelMat.cols(),
+  private Mat matrixMultiplyWithDifferentChannel(Mat oneChannelMat, Mat multipleChannelMat) {
+    Mat result =
+        new Mat(
+            oneChannelMat.rows(),
+            multipleChannelMat.cols(),
             opencv_core.CV_64FC(multipleChannelMat.channels()));
     MatVector resultVector = new MatVector();
-    try(MatVector matVector = new MatVector(multipleChannelMat.channels())){
+    try (MatVector matVector = new MatVector(multipleChannelMat.channels())) {
       opencv_core.split(multipleChannelMat, matVector);
-      IntStream.range(0, multipleChannelMat.channels()).boxed()
-              .forEach(index -> {
+      IntStream.range(0, multipleChannelMat.channels())
+          .boxed()
+          .forEach(
+              index -> {
                 resultVector.push_back(
-                        opencv_core.multiply(oneChannelMat, matVector.get(index)).asMat()
-                );
+                    opencv_core.multiply(oneChannelMat, matVector.get(index)).asMat());
               });
       opencv_core.merge(resultVector, result);
     }

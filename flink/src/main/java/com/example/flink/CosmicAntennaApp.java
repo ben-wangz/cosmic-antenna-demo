@@ -34,7 +34,8 @@ public class CosmicAntennaApp {
     int channelSize = configuration.getInteger(CosmicAntennaConf.CHANNEL_SIZE);
     int timeSampleSize = configuration.getInteger(CosmicAntennaConf.TIME_SAMPLE_SIZE);
     int timeSampleUnitSize = configuration.getInteger(CosmicAntennaConf.TIME_SAMPLE_UNIT_SIZE);
-    int beamFormingWindowSize = configuration.getInteger(CosmicAntennaConf.BEAM_FORMING_WINDOW_SIZE);
+    int beamFormingWindowSize =
+        configuration.getInteger(CosmicAntennaConf.BEAM_FORMING_WINDOW_SIZE);
     int antennaSize = configuration.getInteger(CosmicAntennaConf.ANTENNA_SIZE);
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     ExecutionConfig executionConfig = env.getConfig();
@@ -85,7 +86,7 @@ public class CosmicAntennaApp {
             .window(
                 SlidingEventTimeWindows.of(
                     Time.milliseconds((long) timeSampleUnitSize * beamFormingWindowSize),
-                        Time.milliseconds((long) timeSampleUnitSize * beamFormingWindowSize)))
+                    Time.milliseconds((long) timeSampleUnitSize * beamFormingWindowSize)))
             .apply(
                 BeamFormingWindowFunction.builder()
                     .channelSize(channelSize)
