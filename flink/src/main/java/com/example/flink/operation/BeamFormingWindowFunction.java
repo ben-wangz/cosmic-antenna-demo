@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -20,7 +19,6 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 import org.bytedeco.opencv.global.opencv_core;
 import org.bytedeco.opencv.opencv_core.Mat;
-import org.bytedeco.opencv.opencv_core.MatVector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,10 +126,8 @@ public class BeamFormingWindowFunction
             .imaginaryArray(imaginaryArray)
             .build();
     int channelBeamDataLength = timeSampleUnitSize * beamFormingWindowSize;
-    try (Mat dataRealMat =
-            new Mat(antennaSize, channelBeamDataLength, opencv_core.CV_64FC1);
-        Mat dataImaginaryMat =
-            new Mat(antennaSize, channelBeamDataLength, opencv_core.CV_64FC1)) {
+    try (Mat dataRealMat = new Mat(antennaSize, channelBeamDataLength, opencv_core.CV_64FC1);
+        Mat dataImaginaryMat = new Mat(antennaSize, channelBeamDataLength, opencv_core.CV_64FC1)) {
 
       dataRealMat.data().put(mergedChannelData.getRealArray());
       dataImaginaryMat.data().put(mergedChannelData.getImaginaryArray());
