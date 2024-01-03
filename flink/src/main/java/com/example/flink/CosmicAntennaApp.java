@@ -37,6 +37,7 @@ public class CosmicAntennaApp {
     int beamFormingWindowSize =
         configuration.getInteger(CosmicAntennaConf.BEAM_FORMING_WINDOW_SIZE);
     int antennaSize = configuration.getInteger(CosmicAntennaConf.ANTENNA_SIZE);
+    int businessRelatedWindowSize = timeSampleUnitSize * beamFormingWindowSize;
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     ExecutionConfig executionConfig = env.getConfig();
     executionConfig.setGlobalJobParameters(configuration);
@@ -44,7 +45,7 @@ public class CosmicAntennaApp {
     GroupBeamOperator groupBeamOperator =
         GroupBeamOperator.builder()
             .channelSize(channelSize)
-            .timeSampleSize(timeSampleSize)
+            .timeSampleSize(businessRelatedWindowSize)
             .algorithmNameList(
                 IntStream.range(0, 3)
                     .mapToObj(index -> RandomStringUtils.randomAlphabetic(8))
@@ -85,8 +86,8 @@ public class CosmicAntennaApp {
             .keyBy((KeySelector<ChannelData, Integer>) ChannelData::getChannelId)
             .window(
                 SlidingEventTimeWindows.of(
-                    Time.milliseconds((long) timeSampleUnitSize * beamFormingWindowSize),
-                    Time.milliseconds((long) timeSampleUnitSize * beamFormingWindowSize)))
+                    Time.milliseconds(businessRelatedWindowSize),
+                    Time.milliseconds(businessRelatedWindowSize)))
             .apply(
                 BeamFormingWindowFunction.builder()
                     .channelSize(channelSize)
@@ -101,7 +102,8 @@ public class CosmicAntennaApp {
             .keyBy((KeySelector<ChannelBeamData, Integer>) ChannelBeamData::getBeamId)
             .window(
                 SlidingEventTimeWindows.of(
-                    Time.milliseconds(timeSampleSize), Time.milliseconds(timeSampleSize)))
+                    Time.milliseconds(businessRelatedWindowSize),
+                    Time.milliseconds(businessRelatedWindowSize)))
             .process(groupBeamOperator);
     for (OutputTag<BeamData> outputTag : groupBeamOperator.getOutputTagList()) {
       beamDataStream
