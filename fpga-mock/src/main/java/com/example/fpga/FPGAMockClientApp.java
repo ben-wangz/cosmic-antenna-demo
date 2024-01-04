@@ -34,7 +34,9 @@ public class FPGAMockClientApp {
     int antennaStartIndex =
         Optional.ofNullable(System.getenv("ANTENNA_START_INDEX")).map(Integer::parseInt).orElse(0);
     int antennaIndexIncrement =
-            Optional.ofNullable(System.getenv("ANTENNA_INDEX_INCREMENT")).map(Integer::parseInt).orElse(8);
+        Optional.ofNullable(System.getenv("ANTENNA_INDEX_INCREMENT"))
+            .map(Integer::parseInt)
+            .orElse(8);
     try (FPGAMockClient client = FPGAMockClient.builder().port(port).build()) {
       ChannelFuture channelFuture = client.startup(host);
       LOGGER.info(
@@ -49,14 +51,16 @@ public class FPGAMockClientApp {
           channelFuture
               .channel()
               .writeAndFlush(
-                  Unpooled.wrappedBuffer(randomRecord(antennaStartIndex, antennaIndexIncrement, dataChunkSize)));
+                  Unpooled.wrappedBuffer(
+                      randomRecord(antennaStartIndex, antennaIndexIncrement, dataChunkSize)));
         }
         Thread.sleep(interval);
       }
     }
   }
 
-  private static byte[] randomRecord(int antennaStartIndex, int antennaIndexIncrement, int dataChunkSize) {
+  private static byte[] randomRecord(
+      int antennaStartIndex, int antennaIndexIncrement, int dataChunkSize) {
     Random random = new Random();
     byte[] resultArray = new byte[8 + dataChunkSize * 2];
     ByteBuffer byteBuffer = ByteBuffer.wrap(resultArray);
