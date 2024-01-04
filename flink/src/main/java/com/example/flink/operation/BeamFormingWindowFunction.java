@@ -88,7 +88,6 @@ public class BeamFormingWindowFunction
             antennaIndex,
             startIndexOfUnitChannelData);
         ChannelData unitChannelData = indexedChannelData.get(startCounterOfWindow + unitIndex);
-        // missing data will be interpreted with 0
         if (null == unitChannelData) {
           continue;
         }
@@ -115,6 +114,10 @@ public class BeamFormingWindowFunction
         coefficientRealMat.rows(),
         coefficientRealMat.cols(),
         coefficientRealMat.total());
+    LOGGER.debug(
+        "before initialize channel data , the real array length -> {}, beamFormingWindowSize -> {}",
+        length,
+        beamFormingWindowSize);
     ChannelData mergedChannelData =
         ChannelData.builder()
             .channelId(channelId)
@@ -122,20 +125,23 @@ public class BeamFormingWindowFunction
             .realArray(realArray)
             .imaginaryArray(imaginaryArray)
             .build();
-    try (Mat dataRealMat = new Mat(antennaSize, timeSampleUnitSize, opencv_core.CV_64FC1);
-        Mat dataImaginaryMat = new Mat(antennaSize, timeSampleUnitSize, opencv_core.CV_64FC1)) {
+    int channelBeamDataLength = timeSampleUnitSize * beamFormingWindowSize;
+    try (Mat dataRealMat = new Mat(antennaSize, channelBeamDataLength, opencv_core.CV_64FC1);
+        Mat dataImaginaryMat = new Mat(antennaSize, channelBeamDataLength, opencv_core.CV_64FC1)) {
 
       dataRealMat.data().put(mergedChannelData.getRealArray());
       dataImaginaryMat.data().put(mergedChannelData.getImaginaryArray());
       LOGGER.debug(
-          "created a data real Mat({}, {}), containing {} elements.",
+          "created a data real Mat({}, {}), containing {} channels and {} elements.",
           dataRealMat.rows(),
           dataRealMat.cols(),
-          dataRealMat.total()); // 224, 8
+          dataRealMat.channels(),
+          dataRealMat.total()); // 224, 8, beamFormingSize
       LOGGER.debug(
-          "created a data imaginary Mat({}, {}), containing {} elements.",
+          "created a data imaginary Mat({}, {}), containing {} channels and {} elements.",
           dataImaginaryMat.rows(),
           dataImaginaryMat.cols(),
+          dataImaginaryMat.channels(),
           dataImaginaryMat.total());
       Mat realMat =
           opencv_core
@@ -149,22 +155,24 @@ public class BeamFormingWindowFunction
                   opencv_core.multiply(coefficientRealMat, dataImaginaryMat),
                   opencv_core.multiply(coefficientImaginaryMat, dataRealMat))
               .asMat();
-      LOGGER.debug(
-          "created a result real Mat({}, {}), containing {} elements.",
+      LOGGER.info(
+          "created a result real Mat({}, {}), containing {} channels and {} elements.",
           realMat.rows(),
           realMat.cols(),
-          realMat.total()); // 180, 8
+          realMat.channels(),
+          realMat.total()); // 180, 8, beamFormingSize
       LOGGER.debug(
-          "created a result imaginary Mat({}, {}), containing {} elements.",
+          "created a result imaginary Mat({}, {}), containing {} channels and {} elements.",
           imaginaryMat.rows(),
           imaginaryMat.cols(),
+          imaginaryMat.channels(),
           imaginaryMat.total());
-      int channelBeamDataLength = timeSampleUnitSize * beamFormingWindowSize;
+
       Preconditions.checkArgument(
           realMat.rows() == beamSize, "realMat.rows(%s) != beamSize(%s)", realMat.rows(), beamSize);
       Preconditions.checkArgument(
-          realMat.cols() == timeSampleUnitSize,
-          "realMat.cols(%s) != timeSampleUnitSize(%s)",
+          realMat.cols() == channelBeamDataLength,
+          "realMat.cols(%s) != channelBeamDataLength(%s)",
           realMat.cols(),
           channelBeamDataLength);
       Preconditions.checkArgument(
@@ -173,8 +181,8 @@ public class BeamFormingWindowFunction
           imaginaryMat.rows(),
           beamSize);
       Preconditions.checkArgument(
-          imaginaryMat.cols() == timeSampleUnitSize,
-          "imaginaryMat.cols(%s) != timeSampleUnitSize(%s)",
+          imaginaryMat.cols() == channelBeamDataLength,
+          "imaginaryMat.cols(%s) != channelBeamDataLength(%s)",
           imaginaryMat.cols(),
           channelBeamDataLength);
       for (int beamIndex = 0; beamIndex < beamSize; beamIndex++) {

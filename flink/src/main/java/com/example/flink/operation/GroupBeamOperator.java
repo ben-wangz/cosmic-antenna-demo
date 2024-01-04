@@ -53,7 +53,7 @@ public class GroupBeamOperator
       throws Exception {
     List<ChannelBeamData> channelBeamDataList =
         StreamSupport.stream(elements.spliterator(), false).collect(Collectors.toList());
-    LOGGER.info(
+    LOGGER.debug(
         "group beam operator got {} items, and it contains {} and array length is {}",
         channelBeamDataList.size(),
         channelBeamDataList.get(0),
@@ -62,22 +62,18 @@ public class GroupBeamOperator
     int length = channelSize * timeSampleSize;
     byte[] realArray = new byte[length];
     byte[] imaginaryArray = new byte[length];
-    channelBeamDataList.forEach(
-        channelBeamData -> {
-          Integer channelId = channelBeamData.getChannelId();
-          System.arraycopy(
-              channelBeamData.getRealArray(),
-              0,
-              realArray,
-              channelId * timeSampleSize,
-              timeSampleSize);
-          System.arraycopy(
-              channelBeamData.getImaginaryArray(),
-              0,
-              imaginaryArray,
-              channelId * timeSampleSize,
-              timeSampleSize);
-        });
+
+    for (ChannelBeamData channelBeamData : channelBeamDataList) {
+      Integer channelId = channelBeamData.getChannelId();
+      System.arraycopy(
+          channelBeamData.getRealArray(), 0, realArray, channelId * timeSampleSize, timeSampleSize);
+      System.arraycopy(
+          channelBeamData.getImaginaryArray(),
+          0,
+          imaginaryArray,
+          channelId * timeSampleSize,
+          timeSampleSize);
+    }
     BeamData beamData =
         BeamData.builder()
             .beamId(channelBeamDataList.get(0).getBeamId())

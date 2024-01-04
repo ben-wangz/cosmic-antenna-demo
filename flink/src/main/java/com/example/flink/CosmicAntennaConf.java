@@ -22,7 +22,7 @@ public class CosmicAntennaConf {
   public static final ConfigOption<Integer> BEAM_FORMING_WINDOW_SIZE =
       ConfigOptions.key("cosmic.antenna.app.beamForming.windowSize")
           .intType()
-          .defaultValue(2)
+          .defaultValue(4)
           .withDescription("beam forming window size");
   public static final ConfigOption<Integer> FPGA_SOURCE_PARALLELISM =
       ConfigOptions.key("cosmic.antenna.app.source.parallelism")
