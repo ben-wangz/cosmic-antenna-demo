@@ -10,6 +10,7 @@ var flinkVersion = "1.17.1"
 val jacksonVersion = "2.13.4"
 var slf4jVersion = "2.0.9"
 var logbackVersion = "1.4.14"
+val fabric8Version = "6.2.0"
 dependencies {
     annotationProcessor(lombokDependency)
     implementation("com.google.guava:guava:32.1.1-jre")
@@ -19,6 +20,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
     implementation("org.bytedeco:javacv-platform:1.5.9")
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
+    implementation("io.fabric8:kubernetes-client:$fabric8Version")
 
     shadow("org.apache.flink:flink-streaming-java:$flinkVersion")
     shadow("org.apache.flink:flink-clients:$flinkVersion")
