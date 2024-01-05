@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 2g
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+  labels:
+    app: job-template-example
+  name: job-template-example
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: job-template-example.flink.lab.zjvis.net
+      http:
+        paths:
+          - backend:
+              service:
+                name: job-template-example-rest
+                port:
+                  number: 8081
+            path: /?(.*)
+            pathType: ImplementationSpecific

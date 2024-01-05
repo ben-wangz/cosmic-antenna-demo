@@ -1,0 +1,65 @@
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: job-template-example
+spec:
+  image: flink:1.17
+  flinkVersion: v1_17
+  flinkConfiguration:
+    taskmanager.numberOfTaskSlots: "8"
+  serviceAccount: flink
+  podTemplate:
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: job-template
+    spec:
+      containers:
+        - name: flink-main-container
+          volumeMounts:
+            - mountPath: /opt/flink/downloads
+              name: flink-app-pvc
+      volumes:
+        - name: flink-app-pvc
+          persistentVolumeClaim:
+            claimName: flink-deployment-pvc
+  jobManager:
+    resource:
+      memory: "2048m"
+      cpu: 1
+    podTemplate:
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: task-manager-job-template
+      spec:
+        initContainers:
+          - name: minio-jar
+            image: k8s.io/dc-downloader:v240104-r1
+            env:
+              - name: TZ
+                value: Asia/Shanghai
+              - name: S3_ENDPOINT
+                value: "http://api-minio-dev.lab.zjvis.net:32080"
+              - name: S3_ACCESS_KEY
+                value: "conti"
+              - name: S3_SECRET_KEY
+                value: "Conti@1234"
+              - name: DC_FILE_BUCKET
+                value: "user-data"
+              - name: DC_FILE_READ_PATH
+                value: "home/conti/bundle/"
+              - name: DC_FILE_SAVE_PATH
+                value: "/app/conti"
+            volumeMounts:
+              - mountPath: /app/conti
+                name: flink-app-pvc
+  taskManager:
+    resource:
+      memory: "2048m"
+      cpu: 1
+  job:
+    jarURI: local:///opt/flink/downloads/cosmis-antenna-job.jar
+    parallelism: 1
+    upgradeMode: stateless
+
