@@ -17,6 +17,34 @@ spec:
     spec:
       containers:
       - name: "flink-main-container"
+        env:
+        - name: "cosmic_antenna_app_timeSample_size"
+          value: "16"
+        - name: "cosmic_antenna_app_timeSampleUnit_size"
+          value: "8"
+        - name: "cosmic_antenna_app_beamForming_windowSize"
+          value: "4"
+        - name: "cosmic_antenna_app_source_parallelism"
+          value: "1"
+        - name: "cosmic_antenna_fpga_package_header_size"
+          value: "8"
+        - name: "cosmic_antenna_fpga_channel_size"
+          value: "10"
+        - name: "cosmic_antenna_fpga_antenna_size"
+          value: "224"
+        - name: "cosmic_antenna_fpga_beam_size"
+          value: "180"
+        - name: "cosmic_antenna_coefficient_data_path"
+          value: "/opt/flink/downloads"
+        - name: "cosmic_antenna_k8s_init_switch"
+          value: "True"
+        - name: "cosmic_antenna_k8s_resource_namespace"
+          value: "flink"
+        - name: "cosmic_antenna_k8s_pod_address"
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
         volumeMounts:
         - mountPath: "/opt/flink/downloads"
           name: "flink-app-pvc"
@@ -36,7 +64,7 @@ spec:
       spec:
         initContainers:
         - name: "minio-jar"
-          image: "k8s.io/dc-downloader:v240104-r1"
+          image: "k8s.io/dc-downloader:v240104-r2"
           env:
           - name: "TZ"
             value: "Asia/Shanghai"

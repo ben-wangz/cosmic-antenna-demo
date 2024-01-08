@@ -55,10 +55,10 @@ public class CosmicAntennaConf {
           .defaultValue(
               "C:\\Users\\Administrator\\AppData\\Local\\Temp\\cosmic-antenna4896456594933226445")
           .withDescription("path to coefficient data file");
-  public static final ConfigOption<Boolean> K8S_RESOURCE_INIT_SWITCH =
+  public static final ConfigOption<String> K8S_RESOURCE_INIT_SWITCH =
       ConfigOptions.key("cosmic.antenna.k8s.init.switch")
-          .booleanType()
-          .defaultValue(false)
+          .stringType()
+          .defaultValue("true")
           .withDescription("if it true, will create service and endpoint");
   public static final ConfigOption<String> K8S_FLINK_RESOURCE_NAMESPACE =
       ConfigOptions.key("cosmic.antenna.k8s.resource.namespace")
@@ -79,12 +79,13 @@ public class CosmicAntennaConf {
               ANTENNA_SIZE,
               BEAM_SIZE,
               TIME_SAMPLE_UNIT_SIZE,
-              BEAM_FORMING_WINDOW_SIZE)
+              BEAM_FORMING_WINDOW_SIZE,
+              FPGA_SOURCE_PARALLELISM)
           .forEach(
               configOption ->
                   readIntegerFromEnv(
                       configuration, configOption, keyAsEnvName(configOption.key())));
-      Stream.of(COEFFICIENT_DATA_PATH)
+      Stream.of(COEFFICIENT_DATA_PATH, K8S_FLINK_RESOURCE_NAMESPACE, K8S_RESOURCE_INIT_SWITCH)
           .forEach(
               configOption ->
                   readStringFromEnv(configuration, configOption, keyAsEnvName(configOption.key())));

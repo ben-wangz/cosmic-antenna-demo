@@ -13,6 +13,10 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters;
@@ -42,7 +46,7 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
   private transient EventLoopGroup eventLoopGroup;
   private transient ChannelGroup defaultChannelGroup;
   private transient ChannelId defaultChannelId;
-  private transient boolean initSwitch;
+  private transient String initSwitch;
   private transient String flinkResourceNameSpace;
 
   @Override
@@ -89,13 +93,21 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
     ChannelFuture channelFuture = serverBootstrap.bind(0).sync();
     int port = ((InetSocketAddress) channelFuture.channel().localAddress()).getPort();
     String ipAddr =
-        ((InetSocketAddress) channelFuture.channel().localAddress()).getAddress().getHostAddress();
+        Optional.ofNullable(System.getenv("cosmic_antenna_k8s_pod_address"))
+            .orElse(
+                ((InetSocketAddress) channelFuture.channel().localAddress())
+                    .getAddress()
+                    .getHostAddress());
     LOGGER.info("inner netty server started at address: {}, port: {}", ipAddr, port);
 
     defaultChannelId = channelFuture.channel().id();
     defaultChannelGroup.add(channelFuture.channel());
 
-    initK8sResources(ipAddr, port);
+    if (Boolean.parseBoolean(initSwitch)) {
+      initK8sResources(ipAddr, port);
+    } else {
+      LOGGER.warn("this app is not running in k8s cluster. dont need to create k8s resources.");
+    }
   }
 
   @Override
@@ -127,55 +139,57 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
     }
   }
 
-  private void initK8sResources(String ipAddr, int port) {
-    if (initSwitch) {
-      LOGGER.info("going to init k8s endpoint and service resource.");
-      try (KubernetesClient kubernetesClient = new KubernetesClientBuilder().build()) {
-        kubernetesClient
-            .services()
-            .inNamespace(flinkResourceNameSpace)
-            .resource(
-                new ServiceBuilder()
-                    .withNewMetadata()
-                    .withName("my-service")
-                    .endMetadata()
-                    .withNewSpec()
-                    .withSelector(Collections.singletonMap("app", "MyApp"))
-                    .addNewPort()
-                    .withName("test-port")
-                    .withProtocol("TCP")
-                    .withPort(port)
-                    .withTargetPort(new IntOrString(port))
-                    .endPort()
-                    .withType("LoadBalancer")
-                    .endSpec()
-                    .build())
-            .create();
+  private void initK8sResources(String ipAddr, int port)  {
+    String resourceName = "job-template-example";
+    String portName = "http";
+    Map<String, String> singletonMap =
+        Collections.singletonMap("app.kubernetes.io/name", "job-template-example");
+    LOGGER.info("going to init k8s endpoint and service resource.");
+    try (KubernetesClient kubernetesClient = new KubernetesClientBuilder().build()) {
+      kubernetesClient
+          .services()
+          .inNamespace(flinkResourceNameSpace)
+          .resource(
+              new ServiceBuilder()
+                  .withNewMetadata()
+                  .withName(resourceName)
+                  .endMetadata()
+                  .withNewSpec()
+                  .withSelector(singletonMap)
+                  .addNewPort()
+                  .withName(portName)
+                  .withProtocol("UDP")
+                  .withPort(port)
+                  .withTargetPort(new IntOrString(port))
+                  .endPort()
+                  .endSpec()
+                  .build())
+          .create();
 
-        kubernetesClient
-            .endpoints()
-            .inNamespace(flinkResourceNameSpace)
-            .resource(
-                new EndpointsBuilder()
-                    .withNewMetadata()
-                    .withName("external-web")
-                    .withNamespace(flinkResourceNameSpace)
-                    .endMetadata()
-                    .withSubsets()
-                    .addNewSubset()
-                    .addNewAddress()
-                    .withIp(ipAddr)
-                    .endAddress()
-                    .addNewPort()
-                    .withPort(port)
-                    .withName("apache")
-                    .endPort()
-                    .endSubset()
-                    .build())
-            .create();
-      }
-    } else {
-      LOGGER.warn("this app is not running in k8s cluster. dont need to create k8s resources.");
+      kubernetesClient
+          .endpoints()
+          .inNamespace(flinkResourceNameSpace)
+          .resource(
+              new EndpointsBuilder()
+                  .withNewMetadata()
+                  .withName(resourceName)
+                  .withNamespace(flinkResourceNameSpace)
+                  .withLabels(singletonMap)
+                  .endMetadata()
+                  .withSubsets()
+                  .addNewSubset()
+                  .addNewAddress()
+                  .withIp(ipAddr)
+                  .endAddress()
+                  .addNewPort()
+                  .withName(portName)
+                  .withPort(port)
+                  .endPort()
+                  .endSubset()
+                  .build())
+          .create();
+    }catch (Exception e){
+      LOGGER.error("init k8s resource failed.");
     }
   }
 }
