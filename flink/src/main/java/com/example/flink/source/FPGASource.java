@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
@@ -38,13 +37,13 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
   private static final String BLOCK_HANDLER = "BLOCK-HANDLER";
   private static final long serialVersionUID = -4102927494134535194L;
 
-  private static final String FLINK_NAMESPACE = "flink";
-
   private transient int packageHeaderSize;
   private transient int packageDataSize;
   private transient EventLoopGroup eventLoopGroup;
   private transient ChannelGroup defaultChannelGroup;
   private transient ChannelId defaultChannelId;
+  private transient boolean initSwitch;
+  private transient String flinkResourceNameSpace;
 
   @Override
   public void open(Configuration configuration) throws Exception {
@@ -54,6 +53,8 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
         globalJobParameters instanceof Configuration,
         "globalJobParameters(%s) is not instance of Configuration",
         globalJobParameters.getClass());
+    initSwitch = configuration.get(CosmicAntennaConf.K8S_RESOURCE_INIT_SWITCH);
+    flinkResourceNameSpace = configuration.get(CosmicAntennaConf.K8S_FLINK_RESOURCE_NAMESPACE);
     packageHeaderSize = configuration.get(CosmicAntennaConf.PACKAGE_HEADER_SIZE);
     int timeSampleSize = configuration.get(CosmicAntennaConf.TIME_SAMPLE_SIZE);
     int channelSize = configuration.get(CosmicAntennaConf.CHANNEL_SIZE);
@@ -127,12 +128,12 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
   }
 
   private void initK8sResources(String ipAddr, int port) {
-    if (new File("~/.kube/config2").exists()) {
+    if (initSwitch) {
       LOGGER.info("going to init k8s endpoint and service resource.");
       try (KubernetesClient kubernetesClient = new KubernetesClientBuilder().build()) {
         kubernetesClient
             .services()
-            .inNamespace(FLINK_NAMESPACE)
+            .inNamespace(flinkResourceNameSpace)
             .resource(
                 new ServiceBuilder()
                     .withNewMetadata()
@@ -153,12 +154,12 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
 
         kubernetesClient
             .endpoints()
-            .inNamespace(FLINK_NAMESPACE)
+            .inNamespace(flinkResourceNameSpace)
             .resource(
                 new EndpointsBuilder()
                     .withNewMetadata()
                     .withName("external-web")
-                    .withNamespace(FLINK_NAMESPACE)
+                    .withNamespace(flinkResourceNameSpace)
                     .endMetadata()
                     .withSubsets()
                     .addNewSubset()
@@ -174,8 +175,7 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
             .create();
       }
     } else {
-      LOGGER.warn(
-          "this app is not running in k8s cluster. dont need to create k8s resources.");
+      LOGGER.warn("this app is not running in k8s cluster. dont need to create k8s resources.");
     }
   }
 }
