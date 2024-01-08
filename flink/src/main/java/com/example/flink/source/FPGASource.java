@@ -127,7 +127,7 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
   }
 
   private void initK8sResources(String ipAddr, int port) {
-    if (new File("~/.kube/config").exists()) {
+    if (new File("~/.kube/config2").exists()) {
       LOGGER.info("going to init k8s endpoint and service resource.");
       try (KubernetesClient kubernetesClient = new KubernetesClientBuilder().build()) {
         kubernetesClient
