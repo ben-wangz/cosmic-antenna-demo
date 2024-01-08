@@ -55,9 +55,7 @@ public class CosmicAntennaApp {
         env.addSource(new FPGASource())
             .setParallelism(configuration.getInteger(CosmicAntennaConf.FPGA_SOURCE_PARALLELISM))
             .assignTimestampsAndWatermarks(
-                WatermarkStrategy.<AntennaData>forBoundedOutOfOrderness(
-                        // TODO configure duration
-                        Duration.ofSeconds(1L))
+                WatermarkStrategy.<AntennaData>forBoundedOutOfOrderness(Duration.ofSeconds(1L))
                     // TODO package counter should multiply with iteration count: redis counter++
                     .withTimestampAssigner(
                         (antennaData, timestamp) ->

@@ -5,7 +5,13 @@ import com.example.flink.data.AntennaData;
 import com.example.flink.source.handler.MessageDecoder;
 import com.example.flink.source.handler.SampleDataHandler;
 import com.google.common.base.Preconditions;
+import io.fabric8.kubernetes.api.model.EndpointsBuilder;
+import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.ServiceBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import java.net.InetSocketAddress;
+import java.util.Collections;
 import java.util.List;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -36,6 +42,8 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
   private transient EventLoopGroup eventLoopGroup;
   private transient ChannelGroup defaultChannelGroup;
   private transient ChannelId defaultChannelId;
+  private transient boolean initSwitch;
+  private transient String flinkResourceNameSpace;
 
   @Override
   public void open(Configuration configuration) throws Exception {
@@ -45,6 +53,8 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
         globalJobParameters instanceof Configuration,
         "globalJobParameters(%s) is not instance of Configuration",
         globalJobParameters.getClass());
+    initSwitch = configuration.get(CosmicAntennaConf.K8S_RESOURCE_INIT_SWITCH);
+    flinkResourceNameSpace = configuration.get(CosmicAntennaConf.K8S_FLINK_RESOURCE_NAMESPACE);
     packageHeaderSize = configuration.get(CosmicAntennaConf.PACKAGE_HEADER_SIZE);
     int timeSampleSize = configuration.get(CosmicAntennaConf.TIME_SAMPLE_SIZE);
     int channelSize = configuration.get(CosmicAntennaConf.CHANNEL_SIZE);
@@ -76,13 +86,16 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
                 });
           }
         });
-    ChannelFuture channelFuture = serverBootstrap.bind(18888).sync();
-    LOGGER.info(
-        "inner netty server started at {}",
-        ((InetSocketAddress) channelFuture.channel().localAddress()).getPort());
+    ChannelFuture channelFuture = serverBootstrap.bind(0).sync();
+    int port = ((InetSocketAddress) channelFuture.channel().localAddress()).getPort();
+    String ipAddr =
+        ((InetSocketAddress) channelFuture.channel().localAddress()).getAddress().getHostAddress();
+    LOGGER.info("inner netty server started at address: {}, port: {}", ipAddr, port);
 
     defaultChannelId = channelFuture.channel().id();
     defaultChannelGroup.add(channelFuture.channel());
+
+    initK8sResources(ipAddr, port);
   }
 
   @Override
@@ -111,6 +124,58 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
     }
     if (null != eventLoopGroup) {
       eventLoopGroup.shutdownGracefully();
+    }
+  }
+
+  private void initK8sResources(String ipAddr, int port) {
+    if (initSwitch) {
+      LOGGER.info("going to init k8s endpoint and service resource.");
+      try (KubernetesClient kubernetesClient = new KubernetesClientBuilder().build()) {
+        kubernetesClient
+            .services()
+            .inNamespace(flinkResourceNameSpace)
+            .resource(
+                new ServiceBuilder()
+                    .withNewMetadata()
+                    .withName("my-service")
+                    .endMetadata()
+                    .withNewSpec()
+                    .withSelector(Collections.singletonMap("app", "MyApp"))
+                    .addNewPort()
+                    .withName("test-port")
+                    .withProtocol("TCP")
+                    .withPort(port)
+                    .withTargetPort(new IntOrString(port))
+                    .endPort()
+                    .withType("LoadBalancer")
+                    .endSpec()
+                    .build())
+            .create();
+
+        kubernetesClient
+            .endpoints()
+            .inNamespace(flinkResourceNameSpace)
+            .resource(
+                new EndpointsBuilder()
+                    .withNewMetadata()
+                    .withName("external-web")
+                    .withNamespace(flinkResourceNameSpace)
+                    .endMetadata()
+                    .withSubsets()
+                    .addNewSubset()
+                    .addNewAddress()
+                    .withIp(ipAddr)
+                    .endAddress()
+                    .addNewPort()
+                    .withPort(port)
+                    .withName("apache")
+                    .endPort()
+                    .endSubset()
+                    .build())
+            .create();
+      }
+    } else {
+      LOGGER.warn("this app is not running in k8s cluster. dont need to create k8s resources.");
     }
   }
 }

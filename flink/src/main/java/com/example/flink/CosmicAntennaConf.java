@@ -55,6 +55,16 @@ public class CosmicAntennaConf {
           .defaultValue(
               "C:\\Users\\Administrator\\AppData\\Local\\Temp\\cosmic-antenna4896456594933226445")
           .withDescription("path to coefficient data file");
+  public static final ConfigOption<Boolean> K8S_RESOURCE_INIT_SWITCH =
+      ConfigOptions.key("cosmic.antenna.k8s.init.switch")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("if it true, will create service and endpoint");
+  public static final ConfigOption<String> K8S_FLINK_RESOURCE_NAMESPACE =
+      ConfigOptions.key("cosmic.antenna.k8s.resource.namespace")
+          .stringType()
+          .defaultValue("flink")
+          .withDescription("flink-kubernetes-operator namespace");
 
   public static class ConfigurationBuilder {
     public static Configuration build() {
