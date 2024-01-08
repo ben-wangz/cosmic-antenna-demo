@@ -37,4 +37,7 @@ allprojects {
         maven { setUrl("https://maven.aliyun.com/repository/jcenter") }
         mavenCentral()
     }
+    ext {
+        version = "1.0.0"
+    }
 }

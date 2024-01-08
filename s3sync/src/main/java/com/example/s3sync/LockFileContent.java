@@ -1,23 +1,19 @@
-package com.example.distributed.consensus.data;
+package com.example.s3sync;
 
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 
 @Getter
-@Setter
-@NoArgsConstructor
 @EqualsAndHashCode
 @ToString
 public class LockFileContent {
-
-  private String hostName;
-
+  private String uniqueInstanceName;
   private Long created;
 
   @Builder(toBuilder = true)
   @Jacksonized
-  public LockFileContent(@NonNull String hostName, @NonNull Long created) {
-    this.hostName = hostName;
+  public LockFileContent(@NonNull String uniqueInstanceName, @NonNull Long created) {
+    this.uniqueInstanceName = uniqueInstanceName;
     this.created = created;
   }
 }

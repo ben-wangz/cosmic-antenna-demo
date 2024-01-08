@@ -1,4 +1,4 @@
-package com.example.distributed.consensus.exception;
+package com.example.s3sync.minio;
 
 import java.io.IOException;
 
