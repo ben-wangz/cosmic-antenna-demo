@@ -3,17 +3,6 @@ plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
-repositories {
-    maven { setUrl("https://maven.aliyun.com/repository/public") }
-    maven { setUrl("https://maven.aliyun.com/repository/spring") }
-    maven { setUrl("https://maven.aliyun.com/repository/mapr-public") }
-    maven { setUrl("https://maven.aliyun.com/repository/spring-plugin") }
-    maven { setUrl("https://maven.aliyun.com/repository/gradle-plugin") }
-    maven { setUrl("https://maven.aliyun.com/repository/google") }
-    maven { setUrl("https://maven.aliyun.com/repository/jcenter") }
-    mavenCentral()
-}
-
 val lombokDependency = "org.projectlombok:lombok:1.18.22"
 val slf4jVersion = "2.0.9"
 var logbackVersion = "1.4.14"
