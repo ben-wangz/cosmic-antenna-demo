@@ -43,8 +43,8 @@ spec:
         - name: "cosmic_antenna_k8s_pod_address"
           valueFrom:
             fieldRef:
-              apiVersion: v1
-              fieldPath: status.podIP
+              apiVersion: "v1"
+              fieldPath: "status.podIP"
         volumeMounts:
         - mountPath: "/opt/flink/downloads"
           name: "flink-app-pvc"

@@ -8,13 +8,12 @@ import com.google.common.base.Preconditions;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import io.fabric8.kubernetes.client.utils.Serialization;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters;
@@ -137,14 +136,16 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
     }
   }
 
-  private void initK8sResources(String ipAddr, int port)  {
-    String resourceName = "job-template-example";
+  private void initK8sResources(String ipAddr, int port) {
+    // TODO rename policy -> router client
+    String resourceName = "job-template-example-server";
     String portName = "http";
     Map<String, String> singletonMap =
         Collections.singletonMap("app.kubernetes.io/name", "job-template-example");
     LOGGER.info("going to init k8s endpoint and service resource.");
     try (KubernetesClient kubernetesClient = new KubernetesClientBuilder().build()) {
-      Service service = new ServiceBuilder()
+      Service service =
+          new ServiceBuilder()
               .withNewMetadata()
               .withName(resourceName)
               .withNamespace(flinkResourceNameSpace)
@@ -159,15 +160,14 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
               .endPort()
               .endSpec()
               .build();
-      LOGGER.info("going to init service yaml -> {}", Serialization.yamlMapper().writeValueAsString(service) );
-      kubernetesClient
-          .services()
-          .inNamespace(flinkResourceNameSpace)
-          .resource(service)
-          .create();
-      Endpoints endpoints = new EndpointsBuilder()
+      LOGGER.info(
+          "going to init service yaml -> {}",
+          Serialization.yamlMapper().writeValueAsString(service));
+      kubernetesClient.services().inNamespace(flinkResourceNameSpace).resource(service).create();
+      Endpoints endpoints =
+          new EndpointsBuilder()
               .withNewMetadata()
-              .withName(resourceName)
+              .withName(resourceName + "-endpoint")
               .withNamespace(flinkResourceNameSpace)
               .withLabels(singletonMap)
               .endMetadata()
@@ -182,13 +182,11 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
               .endPort()
               .endSubset()
               .build();
-      LOGGER.info("going to init endpoint yaml -> {}", Serialization.yamlMapper().writeValueAsString(service) );
-      kubernetesClient
-          .endpoints()
-          .inNamespace(flinkResourceNameSpace)
-          .resource(endpoints)
-          .create();
-    }catch (Exception e){
+      LOGGER.info(
+          "going to init endpoint yaml -> {}",
+          Serialization.yamlMapper().writeValueAsString(service));
+      kubernetesClient.endpoints().inNamespace(flinkResourceNameSpace).resource(endpoints).create();
+    } catch (Exception e) {
       LOGGER.error("init k8s resource failed. since {}", e.getCause().getMessage());
     }
   }
