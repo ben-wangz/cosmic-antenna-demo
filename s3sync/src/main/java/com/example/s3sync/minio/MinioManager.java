@@ -1,6 +1,5 @@
-package com.example.distributed.consensus.minio;
+package com.example.s3sync.minio;
 
-import com.example.distributed.consensus.exception.MinioException;
 import com.google.common.base.Preconditions;
 import io.minio.*;
 import io.minio.errors.*;

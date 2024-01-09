@@ -6,11 +6,15 @@ plugins {
 val lombokDependency = "org.projectlombok:lombok:1.18.22"
 val slf4jVersion = "2.0.9"
 var logbackVersion = "1.4.14"
+val jacksonVersion = "2.13.4"
 dependencies {
     annotationProcessor(lombokDependency)
-    implementation("com.google.guava:guava:32.1.1-jre")
-    implementation("io.netty:netty-all:4.1.101.Final")
+    implementation("io.minio:minio:8.5.7")
+    implementation("commons-io:commons-io:2.12.0")
+    implementation("org.apache.commons:commons-lang3:3.12.0")
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
+    implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
+    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
     runtimeOnly("ch.qos.logback:logback-classic:$logbackVersion")
     runtimeOnly("ch.qos.logback:logback-core:$logbackVersion")
 
@@ -31,7 +35,7 @@ tasks.test {
 }
 
 tasks.jar {
-    manifest.attributes["Main-Class"] = "com.example.fpga.FPGAMockClientApp"
+    manifest.attributes["Main-Class"] = "com.example.distributed.s3sync.Application"
 }
 
 var dockerSourceDir = project.file("docker").absolutePath

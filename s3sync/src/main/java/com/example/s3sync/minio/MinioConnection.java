@@ -1,4 +1,4 @@
-package com.example.distributed.consensus.minio;
+package com.example.s3sync.minio;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
