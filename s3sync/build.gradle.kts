@@ -69,7 +69,7 @@ tasks.register<org.gradle.api.tasks.Exec>("buildImage") {
         "podman", "build",
         "--build-arg", "JAR_NAME=$jarName",
         "-f", "$dockerBuildDir/Dockerfile",
-        "-t", "s3-sync:$version",
+        "-t", "${project.name}:$version",
         dockerBuildDir,
     )
     doFirst {
