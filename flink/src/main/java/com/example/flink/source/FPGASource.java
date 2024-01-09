@@ -5,9 +5,7 @@ import com.example.flink.data.AntennaData;
 import com.example.flink.source.handler.MessageDecoder;
 import com.example.flink.source.handler.SampleDataHandler;
 import com.google.common.base.Preconditions;
-import io.fabric8.kubernetes.api.model.EndpointsBuilder;
-import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.ServiceBuilder;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import java.net.InetSocketAddress;
@@ -16,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters;
@@ -146,50 +144,52 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
         Collections.singletonMap("app.kubernetes.io/name", "job-template-example");
     LOGGER.info("going to init k8s endpoint and service resource.");
     try (KubernetesClient kubernetesClient = new KubernetesClientBuilder().build()) {
+      Service service = new ServiceBuilder()
+              .withNewMetadata()
+              .withName(resourceName)
+              .withNamespace(flinkResourceNameSpace)
+              .endMetadata()
+              .withNewSpec()
+              .withSelector(singletonMap)
+              .addNewPort()
+              .withName(portName)
+              .withProtocol("UDP")
+              .withPort(port)
+              .withTargetPort(new IntOrString(port))
+              .endPort()
+              .endSpec()
+              .build();
+      LOGGER.info("going to init service yaml -> {}", Serialization.yamlMapper().writeValueAsString(service) );
       kubernetesClient
           .services()
           .inNamespace(flinkResourceNameSpace)
-          .resource(
-              new ServiceBuilder()
-                  .withNewMetadata()
-                  .withName(resourceName)
-                  .endMetadata()
-                  .withNewSpec()
-                  .withSelector(singletonMap)
-                  .addNewPort()
-                  .withName(portName)
-                  .withProtocol("UDP")
-                  .withPort(port)
-                  .withTargetPort(new IntOrString(port))
-                  .endPort()
-                  .endSpec()
-                  .build())
+          .resource(service)
           .create();
-
+      Endpoints endpoints = new EndpointsBuilder()
+              .withNewMetadata()
+              .withName(resourceName)
+              .withNamespace(flinkResourceNameSpace)
+              .withLabels(singletonMap)
+              .endMetadata()
+              .withSubsets()
+              .addNewSubset()
+              .addNewAddress()
+              .withIp(ipAddr)
+              .endAddress()
+              .addNewPort()
+              .withName(portName)
+              .withPort(port)
+              .endPort()
+              .endSubset()
+              .build();
+      LOGGER.info("going to init endpoint yaml -> {}", Serialization.yamlMapper().writeValueAsString(service) );
       kubernetesClient
           .endpoints()
           .inNamespace(flinkResourceNameSpace)
-          .resource(
-              new EndpointsBuilder()
-                  .withNewMetadata()
-                  .withName(resourceName)
-                  .withNamespace(flinkResourceNameSpace)
-                  .withLabels(singletonMap)
-                  .endMetadata()
-                  .withSubsets()
-                  .addNewSubset()
-                  .addNewAddress()
-                  .withIp(ipAddr)
-                  .endAddress()
-                  .addNewPort()
-                  .withName(portName)
-                  .withPort(port)
-                  .endPort()
-                  .endSubset()
-                  .build())
+          .resource(endpoints)
           .create();
     }catch (Exception e){
-      LOGGER.error("init k8s resource failed.");
+      LOGGER.error("init k8s resource failed. since {}", e.getCause().getMessage());
     }
   }
 }
