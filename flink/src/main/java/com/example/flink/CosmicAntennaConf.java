@@ -60,11 +60,22 @@ public class CosmicAntennaConf {
           .stringType()
           .defaultValue("true")
           .withDescription("if it true, will create service and endpoint");
-  public static final ConfigOption<String> K8S_FLINK_RESOURCE_NAMESPACE =
-      ConfigOptions.key("cosmic.antenna.k8s.resource.namespace")
+  public static final ConfigOption<String> K8S_FLINK_NAMESPACE =
+      ConfigOptions.key("cosmic.antenna.k8s.namespace")
           .stringType()
           .defaultValue("flink")
           .withDescription("flink-kubernetes-operator namespace");
+  public static final ConfigOption<String> K8S_POD_ADDRESS =
+          ConfigOptions.key("cosmic.antenna.k8s.pod.address")
+                  .stringType()
+                  .defaultValue("127.0.0.1")
+                  .withDescription("flink job pod ip address");
+
+  public static final ConfigOption<String> JOB_NAME =
+          ConfigOptions.key("cosmic.antenna.job.name")
+                  .stringType()
+                  .defaultValue("job-template-example")
+                  .withDescription("flink job name");
 
   public static class ConfigurationBuilder {
     public static Configuration build() {
@@ -85,7 +96,7 @@ public class CosmicAntennaConf {
               configOption ->
                   readIntegerFromEnv(
                       configuration, configOption, keyAsEnvName(configOption.key())));
-      Stream.of(COEFFICIENT_DATA_PATH, K8S_FLINK_RESOURCE_NAMESPACE, K8S_RESOURCE_INIT_SWITCH)
+      Stream.of(COEFFICIENT_DATA_PATH, K8S_FLINK_NAMESPACE, K8S_RESOURCE_INIT_SWITCH, K8S_POD_ADDRESS, JOB_NAME)
           .forEach(
               configOption ->
                   readStringFromEnv(configuration, configOption, keyAsEnvName(configOption.key())));

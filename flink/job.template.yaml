@@ -38,8 +38,10 @@ spec:
           value: "/opt/flink/downloads"
         - name: "cosmic_antenna_k8s_init_switch"
           value: "True"
-        - name: "cosmic_antenna_k8s_resource_namespace"
+        - name: "cosmic_antenna_k8s_namespace"
           value: "flink"
+        - name: "cosmic_antenna_job_name"
+          value: "job-template-example"
         - name: "cosmic_antenna_k8s_pod_address"
           valueFrom:
             fieldRef:
@@ -79,11 +81,11 @@ spec:
           - name: "OBJECT_KEY"
             value: "home/conti/bundle/"
           - name: "TARGET_PATH"
-            value: "/app/conti"
+            value: "/app/resource"
           - name: "TIMEOUT_MILLISECONDS"
             value: "60000"
           volumeMounts:
-          - mountPath: "/app/conti"
+          - mountPath: "/app/resource"
             name: "flink-app-pvc"
   taskManager:
     resource:

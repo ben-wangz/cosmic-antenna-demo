@@ -4,6 +4,7 @@ import com.example.flink.CosmicAntennaConf;
 import com.example.flink.data.AntennaData;
 import com.example.flink.source.handler.MessageDecoder;
 import com.example.flink.source.handler.SampleDataHandler;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Preconditions;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -44,7 +45,7 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
   private transient ChannelGroup defaultChannelGroup;
   private transient ChannelId defaultChannelId;
   private transient String initSwitch;
-  private transient String flinkResourceNameSpace;
+  private transient String flinkNameSpace;
 
   @Override
   public void open(Configuration configuration) throws Exception {
@@ -56,8 +57,8 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
         globalJobParameters.getClass());
     initSwitch =
         ((Configuration) globalJobParameters).get(CosmicAntennaConf.K8S_RESOURCE_INIT_SWITCH);
-    flinkResourceNameSpace =
-        ((Configuration) globalJobParameters).get(CosmicAntennaConf.K8S_FLINK_RESOURCE_NAMESPACE);
+    flinkNameSpace =
+        ((Configuration) globalJobParameters).get(CosmicAntennaConf.K8S_FLINK_NAMESPACE);
     packageHeaderSize =
         ((Configuration) globalJobParameters).get(CosmicAntennaConf.PACKAGE_HEADER_SIZE);
     int timeSampleSize =
@@ -94,18 +95,16 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
     ChannelFuture channelFuture = serverBootstrap.bind(0).sync();
     int port = ((InetSocketAddress) channelFuture.channel().localAddress()).getPort();
     String ipAddr =
-        Optional.ofNullable(System.getenv("cosmic_antenna_k8s_pod_address"))
-            .orElse(
-                ((InetSocketAddress) channelFuture.channel().localAddress())
-                    .getAddress()
-                    .getHostAddress());
+        Optional.ofNullable(((Configuration) globalJobParameters).get(CosmicAntennaConf.K8S_POD_ADDRESS))
+                .orElseThrow(() -> new IllegalArgumentException("cannot find environment variable \"cosmic_antenna_k8s_pod_address\""));
     LOGGER.info("inner netty server started at address: {}, port: {}", ipAddr, port);
 
     defaultChannelId = channelFuture.channel().id();
     defaultChannelGroup.add(channelFuture.channel());
 
     if (Boolean.parseBoolean(initSwitch)) {
-      initK8sResources(getRuntimeContext().getIndexOfThisSubtask(), ipAddr, port);
+      String jobName = ((Configuration) globalJobParameters).get(CosmicAntennaConf.JOB_NAME);
+      initK8sResources(jobName, getRuntimeContext().getIndexOfThisSubtask(), ipAddr, port);
     } else {
       LOGGER.warn("this app is not running in k8s cluster. dont need to create k8s resources.");
     }
@@ -140,8 +139,8 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
     }
   }
 
-  private void initK8sResources(int sourceId, String ipAddr, int port) {
-    String resourceName = String.format("job-template-example-fpga-server-%s", sourceId);
+  private void initK8sResources(String jobName, int sourceId, String ipAddr, int port) throws JsonProcessingException {
+    String resourceName = String.format("%s-fpga-server-%s", jobName, sourceId);
     String portName = "http";
 
     Map<String, String> singletonMap =
@@ -153,7 +152,7 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
           new ServiceBuilder()
               .withNewMetadata()
               .withName(resourceName)
-              .withNamespace(flinkResourceNameSpace)
+              .withNamespace(flinkNameSpace)
               .endMetadata()
               .withNewSpec()
               .withSelector(singletonMap)
@@ -168,12 +167,12 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
       LOGGER.info(
           "going to init service yaml -> {}",
           Serialization.yamlMapper().writeValueAsString(service));
-      kubernetesClient.services().inNamespace(flinkResourceNameSpace).resource(service).create();
+      kubernetesClient.services().inNamespace(flinkNameSpace).resource(service).create();
       Endpoints endpoints =
           new EndpointsBuilder()
               .withNewMetadata()
               .withName(resourceName + "-endpoint")
-              .withNamespace(flinkResourceNameSpace)
+              .withNamespace(flinkNameSpace)
               .withLabels(singletonMap)
               .endMetadata()
               .withSubsets()
@@ -190,9 +189,7 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
       LOGGER.info(
           "going to init endpoint yaml -> {}",
           Serialization.yamlMapper().writeValueAsString(endpoints));
-      kubernetesClient.endpoints().inNamespace(flinkResourceNameSpace).resource(endpoints).create();
-    } catch (Exception e) {
-      LOGGER.error("init k8s resource failed. since {}", e.getCause().getMessage());
+      kubernetesClient.endpoints().inNamespace(flinkNameSpace).resource(endpoints).create();
     }
   }
 }

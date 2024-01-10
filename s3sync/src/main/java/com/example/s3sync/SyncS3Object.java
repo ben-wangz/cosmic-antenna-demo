@@ -73,23 +73,24 @@ public class SyncS3Object {
     }
   }
 
-  private void syncFile(String objectKey, File savedPath) throws IOException {
-    File lockFile = FileUtils.getFile(savedPath.getAbsolutePath() + ".lock");
-    boolean lockedByUs = seizeLock(savedPath);
+  private void syncFile(String objectKey, File targetFile) throws IOException {
+    File lockFile = FileUtils.getFile(targetFile.getAbsolutePath() + ".lock");
+    boolean lockedByUs = seizeLock(targetFile);
     if (lockedByUs) {
       File tempFile =
           FileUtils.getFile(
-              FilenameUtils.getFullPath(savedPath.getAbsolutePath()),
+              FilenameUtils.getFullPath(targetFile.getAbsolutePath()),
               String.format(
-                  "%s.%s.tmp", FilenameUtils.getBaseName(savedPath.getName()), uniqueInstanceName));
+                  "%s.%s.tmp", FilenameUtils.getBaseName(targetFile.getName()), uniqueInstanceName));
       try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile)) {
         InputStream inputStream =
             minioManager.objectGetFromOffset(bucket, objectKey, tempFile.length());
         IOUtils.copy(inputStream, fileOutputStream);
         fileOutputStream.flush();
+      }finally {
+        FileUtils.moveFile(tempFile, targetFile);
+        FileUtils.deleteQuietly(lockFile);
       }
-      FileUtils.moveFile(tempFile, savedPath);
-      FileUtils.deleteQuietly(lockFile);
     }
   }
 
