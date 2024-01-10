@@ -75,7 +75,7 @@ public class MinioManager {
     return String.format("directoryPath is not empty(%s)", completeDirectoryPath(directoryPath));
   }
 
-  public static boolean isDirectoryPath(String path) {
+  public boolean isDirectoryPath(String bucket, String path) throws MinioException {
     return path.endsWith("/");
   }
 

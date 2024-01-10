@@ -35,7 +35,7 @@ tasks.test {
 }
 
 tasks.jar {
-    manifest.attributes["Main-Class"] = "com.example.distributed.s3sync.Application"
+    manifest.attributes["Main-Class"] = "com.example.s3sync.Application"
 }
 
 var dockerSourceDir = project.file("docker").absolutePath

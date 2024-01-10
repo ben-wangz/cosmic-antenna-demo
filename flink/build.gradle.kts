@@ -1,5 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
 plugins {
     java
     id("com.github.johnrengelman.shadow") version "8.1.1"
@@ -38,18 +36,14 @@ java {
     }
 }
 
-tasks.named<Test>("test") {
+tasks.test {
     useJUnitPlatform()
 }
 
-tasks {
-    named<ShadowJar>("shadowJar") {
-        archiveBaseName.set("shadow")
-        archiveVersion.set("1.0")
-        archiveClassifier.set("")
-        manifest {
-            attributes(mapOf("Main-Class" to "com.example.flink.CosmicAntennaApp"))
-        }
-        relocate("com.google.common", "com.example.flink.shadow.com.google.common")
-    }
+tasks.jar {
+    manifest.attributes["Main-Class"] = "com.example.flink.CosmicAntennaApp"
+}
+
+tasks.shadowJar{
+    relocate("com.google.common", "com.example.flink.shadow.com.google.common")
 }

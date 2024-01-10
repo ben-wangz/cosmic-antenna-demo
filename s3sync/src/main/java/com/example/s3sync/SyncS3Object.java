@@ -5,7 +5,6 @@ import com.example.s3sync.minio.MinioFile;
 import com.example.s3sync.minio.MinioManager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Preconditions;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -63,15 +62,10 @@ public class SyncS3Object {
 
   public void sync() throws IOException {
     connect();
-    if (!MinioManager.isDirectoryPath(objectKey)) {
+    if (!minioManager.isDirectoryPath(bucket, objectKey)) {
       syncFile(objectKey, targetPath);
       return;
     }
-    Preconditions.checkArgument(
-        targetPath.isDirectory(),
-        "targetPath(%s) must be directory because objectKey(%s) is directory",
-        targetPath,
-        objectKey);
     for (MinioFile file : minioManager.objectList(bucket, objectKey, true)) {
       syncFile(
           file.getObjectKey(),
@@ -81,17 +75,20 @@ public class SyncS3Object {
 
   private void syncFile(String objectKey, File targetFile) throws IOException {
     File lockFile = FileUtils.getFile(targetFile.getAbsolutePath() + ".lock");
-    boolean lockedByUs = seizeLock(lockFile);
+    boolean lockedByUs = seizeLock(targetFile);
     if (lockedByUs) {
       File tempFile =
           FileUtils.getFile(
-              targetPath,
-              String.format("%s.%s.tmp", FilenameUtils.getBaseName(objectKey), uniqueInstanceName));
+              FilenameUtils.getFullPath(targetFile.getAbsolutePath()),
+              String.format(
+                  "%s.%s.tmp",
+                  FilenameUtils.getBaseName(targetFile.getName()), uniqueInstanceName));
       try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile)) {
         InputStream inputStream =
             minioManager.objectGetFromOffset(bucket, objectKey, tempFile.length());
         IOUtils.copy(inputStream, fileOutputStream);
         fileOutputStream.flush();
+      } finally {
         FileUtils.moveFile(tempFile, targetFile);
         FileUtils.deleteQuietly(lockFile);
       }
@@ -99,9 +96,10 @@ public class SyncS3Object {
   }
 
   // TODO may not be able to atomically create the lock file
-  private boolean seizeLock(File lockFile) throws IOException {
+  private boolean seizeLock(File savedPath) throws IOException {
+    File lockFile = FileUtils.getFile(savedPath.getAbsolutePath() + ".lock");
     for (int index = 0; index < maxWaitAttempts; index++) {
-      if (syncSuccess(targetPath)) {
+      if (syncSuccess(savedPath)) {
         return false;
       }
       if (!lockFile.exists()) {

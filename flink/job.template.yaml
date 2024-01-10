@@ -17,6 +17,36 @@ spec:
     spec:
       containers:
       - name: "flink-main-container"
+        env:
+        - name: "cosmic_antenna_app_timeSample_size"
+          value: "16"
+        - name: "cosmic_antenna_app_timeSampleUnit_size"
+          value: "8"
+        - name: "cosmic_antenna_app_beamForming_windowSize"
+          value: "4"
+        - name: "cosmic_antenna_app_source_parallelism"
+          value: "1"
+        - name: "cosmic_antenna_fpga_package_header_size"
+          value: "8"
+        - name: "cosmic_antenna_fpga_channel_size"
+          value: "10"
+        - name: "cosmic_antenna_fpga_antenna_size"
+          value: "224"
+        - name: "cosmic_antenna_fpga_beam_size"
+          value: "180"
+        - name: "cosmic_antenna_coefficient_data_path"
+          value: "/opt/flink/downloads"
+        - name: "cosmic_antenna_k8s_init_switch"
+          value: "True"
+        - name: "cosmic_antenna_k8s_namespace"
+          value: "flink"
+        - name: "cosmic_antenna_job_name"
+          value: "job-template-example"
+        - name: "cosmic_antenna_k8s_pod_address"
+          valueFrom:
+            fieldRef:
+              apiVersion: "v1"
+              fieldPath: "status.podIP"
         volumeMounts:
         - mountPath: "/opt/flink/downloads"
           name: "flink-app-pvc"
@@ -35,31 +65,33 @@ spec:
         name: "task-manager-job-template"
       spec:
         initContainers:
-        - name: "minio-jar"
-          image: "k8s.io/dc-downloader:v240104-r1"
+        - name: "s3-sync-jar"
+          image: "localhost/s3sync:1.0.0"
           env:
           - name: "TZ"
             value: "Asia/Shanghai"
-          - name: "S3_ENDPOINT"
+          - name: "ENDPOINT"
             value: "http://api-minio-dev.lab.zjvis.net:32080"
-          - name: "S3_ACCESS_KEY"
+          - name: "ACCESS_KEY"
             value: "conti"
-          - name: "S3_SECRET_KEY"
+          - name: "ACCESS_SECRET"
             value: "Conti@1234"
-          - name: "DC_FILE_BUCKET"
+          - name: "BUCKET"
             value: "user-data"
-          - name: "DC_FILE_READ_PATH"
+          - name: "OBJECT_KEY"
             value: "home/conti/bundle/"
-          - name: "DC_FILE_SAVE_PATH"
-            value: "/app/conti"
+          - name: "TARGET_PATH"
+            value: "/app/resource"
+          - name: "TIMEOUT_MILLISECONDS"
+            value: "60000"
           volumeMounts:
-          - mountPath: "/app/conti"
+          - mountPath: "/app/resource"
             name: "flink-app-pvc"
   taskManager:
     resource:
       memory: "2048m"
       cpu: 1
   job:
-    jarURI: "local:///opt/flink/downloads/cosmis-antenna-job.jar"
+    jarURI: "local:///opt/flink/downloads/flink-1.0.0-all.jar"
     parallelism: 1
     upgradeMode: "stateless"
