@@ -139,8 +139,9 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
   private void initK8sResources(int sourceId, String ipAddr, int port) {
     String resourceName = String.format("job-template-example-fpga-server-%s", sourceId);
     String portName = "http";
+
     Map<String, String> singletonMap =
-        Collections.singletonMap("app.kubernetes.io/name", "job-template-example");
+        Collections.singletonMap("app.source.service.endpoint/name", getRuntimeContext().getJobId() + "-" + sourceId);
     LOGGER.info("going to init k8s endpoint and service resource.");
     try (KubernetesClient kubernetesClient = new KubernetesClientBuilder().build()) {
       Service service =
