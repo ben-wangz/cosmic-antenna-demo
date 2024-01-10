@@ -44,6 +44,6 @@ tasks.jar {
     manifest.attributes["Main-Class"] = "com.example.flink.CosmicAntennaApp"
 }
 
-tasks.shadowJar{
+tasks.shadowJar {
     relocate("com.google.common", "com.example.flink.shadow.com.google.common")
 }

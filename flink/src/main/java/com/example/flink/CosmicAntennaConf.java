@@ -29,6 +29,11 @@ public class CosmicAntennaConf {
           .intType()
           .defaultValue(1)
           .withDescription("number of parallelism for FPGA source operator");
+  public static final ConfigOption<Integer> FPGA_CLIENT_DEFAULT_PORT =
+      ConfigOptions.key("cosmic.antenna.app.client.default.port")
+          .intType()
+          .defaultValue(10080)
+          .withDescription("fpga mock client default port");
   public static final ConfigOption<Integer> PACKAGE_HEADER_SIZE =
       ConfigOptions.key("cosmic.antenna.fpga.package.header.size")
           .intType()
