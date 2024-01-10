@@ -13,9 +13,9 @@ public class Application {
 
   public static void main(String[] args) throws Exception {
     String endpoint =
-        Optional.ofNullable(System.getenv("ENDPOINT")).orElse("http://api-minio-dev.lab.zjvis.net:32080");
-    String accessKey = Optional.ofNullable(System.getenv("ACCESS_KEY")).orElse("conti");
-    String accessSecret = Optional.ofNullable(System.getenv("ACCESS_SECRET")).orElse("Conti@1234");
+        Optional.ofNullable(System.getenv("ENDPOINT")).orElse("http://host.docker.internal:9000");
+    String accessKey = Optional.ofNullable(System.getenv("ACCESS_KEY")).orElse("minioadmin");
+    String accessSecret = Optional.ofNullable(System.getenv("ACCESS_SECRET")).orElse("minioadmin");
     bucket =
         Optional.ofNullable(System.getenv("BUCKET"))
             .orElseThrow(() -> new Exception("BUCKET is required"));

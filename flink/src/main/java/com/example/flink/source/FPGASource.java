@@ -54,10 +54,14 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
         globalJobParameters instanceof Configuration,
         "globalJobParameters(%s) is not instance of Configuration",
         globalJobParameters.getClass());
-    initSwitch = ((Configuration) globalJobParameters).get(CosmicAntennaConf.K8S_RESOURCE_INIT_SWITCH);
-    flinkResourceNameSpace = ((Configuration) globalJobParameters).get(CosmicAntennaConf.K8S_FLINK_RESOURCE_NAMESPACE);
-    packageHeaderSize = ((Configuration) globalJobParameters).get(CosmicAntennaConf.PACKAGE_HEADER_SIZE);
-    int timeSampleSize = ((Configuration) globalJobParameters).get(CosmicAntennaConf.TIME_SAMPLE_SIZE);
+    initSwitch =
+        ((Configuration) globalJobParameters).get(CosmicAntennaConf.K8S_RESOURCE_INIT_SWITCH);
+    flinkResourceNameSpace =
+        ((Configuration) globalJobParameters).get(CosmicAntennaConf.K8S_FLINK_RESOURCE_NAMESPACE);
+    packageHeaderSize =
+        ((Configuration) globalJobParameters).get(CosmicAntennaConf.PACKAGE_HEADER_SIZE);
+    int timeSampleSize =
+        ((Configuration) globalJobParameters).get(CosmicAntennaConf.TIME_SAMPLE_SIZE);
     int channelSize = ((Configuration) globalJobParameters).get(CosmicAntennaConf.CHANNEL_SIZE);
     packageDataSize = timeSampleSize * channelSize * 2;
     eventLoopGroup = new NioEventLoopGroup();
@@ -141,7 +145,8 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
     String portName = "http";
 
     Map<String, String> singletonMap =
-        Collections.singletonMap("app.source.service.endpoint/name", getRuntimeContext().getJobId() + "-" + sourceId);
+        Collections.singletonMap(
+            "app.source.service.endpoint/name", getRuntimeContext().getJobId() + "-" + sourceId);
     LOGGER.info("going to init k8s endpoint and service resource.");
     try (KubernetesClient kubernetesClient = new KubernetesClientBuilder().build()) {
       Service service =
