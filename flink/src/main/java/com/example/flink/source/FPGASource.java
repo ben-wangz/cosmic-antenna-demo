@@ -54,11 +54,11 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
         globalJobParameters instanceof Configuration,
         "globalJobParameters(%s) is not instance of Configuration",
         globalJobParameters.getClass());
-    initSwitch = configuration.get(CosmicAntennaConf.K8S_RESOURCE_INIT_SWITCH);
-    flinkResourceNameSpace = configuration.get(CosmicAntennaConf.K8S_FLINK_RESOURCE_NAMESPACE);
-    packageHeaderSize = configuration.get(CosmicAntennaConf.PACKAGE_HEADER_SIZE);
-    int timeSampleSize = configuration.get(CosmicAntennaConf.TIME_SAMPLE_SIZE);
-    int channelSize = configuration.get(CosmicAntennaConf.CHANNEL_SIZE);
+    initSwitch = ((Configuration) globalJobParameters).get(CosmicAntennaConf.K8S_RESOURCE_INIT_SWITCH);
+    flinkResourceNameSpace = ((Configuration) globalJobParameters).get(CosmicAntennaConf.K8S_FLINK_RESOURCE_NAMESPACE);
+    packageHeaderSize = ((Configuration) globalJobParameters).get(CosmicAntennaConf.PACKAGE_HEADER_SIZE);
+    int timeSampleSize = ((Configuration) globalJobParameters).get(CosmicAntennaConf.TIME_SAMPLE_SIZE);
+    int channelSize = ((Configuration) globalJobParameters).get(CosmicAntennaConf.CHANNEL_SIZE);
     packageDataSize = timeSampleSize * channelSize * 2;
     eventLoopGroup = new NioEventLoopGroup();
     defaultChannelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
@@ -101,7 +101,7 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
     defaultChannelGroup.add(channelFuture.channel());
 
     if (Boolean.parseBoolean(initSwitch)) {
-      initK8sResources(ipAddr, port);
+      initK8sResources(getRuntimeContext().getIndexOfThisSubtask(), ipAddr, port);
     } else {
       LOGGER.warn("this app is not running in k8s cluster. dont need to create k8s resources.");
     }
@@ -136,9 +136,8 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
     }
   }
 
-  private void initK8sResources(String ipAddr, int port) {
-    // TODO rename policy -> router client
-    String resourceName = "job-template-example-server";
+  private void initK8sResources(int sourceId, String ipAddr, int port) {
+    String resourceName = String.format("job-template-example-fpga-server-%s", sourceId);
     String portName = "http";
     Map<String, String> singletonMap =
         Collections.singletonMap("app.kubernetes.io/name", "job-template-example");
@@ -184,7 +183,7 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
               .build();
       LOGGER.info(
           "going to init endpoint yaml -> {}",
-          Serialization.yamlMapper().writeValueAsString(service));
+          Serialization.yamlMapper().writeValueAsString(endpoints));
       kubernetesClient.endpoints().inNamespace(flinkResourceNameSpace).resource(endpoints).create();
     } catch (Exception e) {
       LOGGER.error("init k8s resource failed. since {}", e.getCause().getMessage());

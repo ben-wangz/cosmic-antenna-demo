@@ -45,7 +45,7 @@ tasks.named<Test>("test") {
 tasks {
     named<ShadowJar>("shadowJar") {
         archiveBaseName.set("shadow")
-        archiveVersion.set("1.0")
+        archiveVersion.set("1.0.1")
         archiveClassifier.set("")
         manifest {
             attributes(mapOf("Main-Class" to "com.example.flink.CosmicAntennaApp"))
