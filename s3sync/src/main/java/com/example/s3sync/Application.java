@@ -53,7 +53,7 @@ public class Application {
             .timeoutMilliseconds(timeoutMilliseconds)
             .build();
     syncS3Object.sync();
-    //TODO wait 1 min no matter files download or not
+    // TODO wait 1 min no matter files download or not
     System.exit(0);
   }
 }

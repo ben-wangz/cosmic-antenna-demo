@@ -81,13 +81,14 @@ public class SyncS3Object {
           FileUtils.getFile(
               FilenameUtils.getFullPath(targetFile.getAbsolutePath()),
               String.format(
-                  "%s.%s.tmp", FilenameUtils.getBaseName(targetFile.getName()), uniqueInstanceName));
+                  "%s.%s.tmp",
+                  FilenameUtils.getBaseName(targetFile.getName()), uniqueInstanceName));
       try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile)) {
         InputStream inputStream =
             minioManager.objectGetFromOffset(bucket, objectKey, tempFile.length());
         IOUtils.copy(inputStream, fileOutputStream);
         fileOutputStream.flush();
-      }finally {
+      } finally {
         FileUtils.moveFile(tempFile, targetFile);
         FileUtils.deleteQuietly(lockFile);
       }

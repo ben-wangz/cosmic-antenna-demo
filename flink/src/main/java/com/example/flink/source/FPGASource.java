@@ -95,8 +95,12 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
     ChannelFuture channelFuture = serverBootstrap.bind(0).sync();
     int port = ((InetSocketAddress) channelFuture.channel().localAddress()).getPort();
     String ipAddr =
-        Optional.ofNullable(((Configuration) globalJobParameters).get(CosmicAntennaConf.K8S_POD_ADDRESS))
-                .orElseThrow(() -> new IllegalArgumentException("cannot find environment variable \"cosmic_antenna_k8s_pod_address\""));
+        Optional.ofNullable(
+                ((Configuration) globalJobParameters).get(CosmicAntennaConf.K8S_POD_ADDRESS))
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "cannot find environment variable \"cosmic_antenna_k8s_pod_address\""));
     LOGGER.info("inner netty server started at address: {}, port: {}", ipAddr, port);
 
     defaultChannelId = channelFuture.channel().id();
@@ -139,7 +143,8 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
     }
   }
 
-  private void initK8sResources(String jobName, int sourceId, String ipAddr, int port) throws JsonProcessingException {
+  private void initK8sResources(String jobName, int sourceId, String ipAddr, int port)
+      throws JsonProcessingException {
     String resourceName = String.format("%s-fpga-server-%s", jobName, sourceId);
     String portName = "http";
 
