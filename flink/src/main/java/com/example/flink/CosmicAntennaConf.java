@@ -32,7 +32,7 @@ public class CosmicAntennaConf {
   public static final ConfigOption<Integer> FPGA_CLIENT_DEFAULT_PORT =
       ConfigOptions.key("cosmic.antenna.app.client.default.port")
           .intType()
-          .defaultValue(10080)
+          .defaultValue(1080)
           .withDescription("fpga mock client default port");
   public static final ConfigOption<Integer> PACKAGE_HEADER_SIZE =
       ConfigOptions.key("cosmic.antenna.fpga.package.header.size")

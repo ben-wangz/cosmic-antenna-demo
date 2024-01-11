@@ -22,7 +22,9 @@ public class FPGAMockClientApp {
     int count =
         Optional.ofNullable(System.getenv("RECORD_COUNT")).map(Integer::parseInt).orElse(-1);
     int interval =
-        Optional.ofNullable(System.getenv("RECORD_INTERVAL_MILLISECONDS")).map(Integer::parseInt).orElse(1000);
+        Optional.ofNullable(System.getenv("RECORD_INTERVAL_MILLISECONDS"))
+            .map(Integer::parseInt)
+            .orElse(1000);
     int channelSize =
         Optional.ofNullable(System.getenv("CHANNEL_SIZE")).map(Integer::parseInt).orElse(10);
     int timeSampleSize =

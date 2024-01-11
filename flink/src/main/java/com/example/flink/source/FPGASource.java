@@ -97,7 +97,7 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
     int serverPort = ((InetSocketAddress) channelFuture.channel().localAddress()).getPort();
     String ipAddr =
         Optional.ofNullable(
-                ((Configuration) globalJobParameters).get(CosmicAntennaConf.K8S_POD_ADDRESS))
+                System.getenv(CosmicAntennaConf.K8S_POD_ADDRESS.key().replaceAll("\\.", "_")))
             .orElseThrow(
                 () ->
                     new IllegalArgumentException(
@@ -199,7 +199,11 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
       LOGGER.info(
           "going to init endpoint yaml -> {}",
           Serialization.yamlMapper().writeValueAsString(endpoints));
-      kubernetesClient.endpoints().inNamespace(flinkNameSpace).resource(endpoints).createOrReplace();
+      kubernetesClient
+          .endpoints()
+          .inNamespace(flinkNameSpace)
+          .resource(endpoints)
+          .createOrReplace();
     }
   }
 }
