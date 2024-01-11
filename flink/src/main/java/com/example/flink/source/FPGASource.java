@@ -153,9 +153,6 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
     String resourceName = String.format("%s-fpga-server-%s", jobName, sourceId);
     String portName = "fpga-server-" + RandomStringUtils.randomAlphabetic(6).toLowerCase();
 
-    Map<String, String> singletonMap =
-        Collections.singletonMap(
-            "app.source.service.endpoint/name", getRuntimeContext().getJobId() + "-" + sourceId);
     LOGGER.info("going to init k8s endpoint and service resource.");
     try (KubernetesClient kubernetesClient = new KubernetesClientBuilder().build()) {
       Service service =
@@ -165,7 +162,6 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
               .withNamespace(flinkNameSpace)
               .endMetadata()
               .withNewSpec()
-              .withSelector(singletonMap)
               .addNewPort()
               .withName(portName)
               .withProtocol("UDP")
@@ -181,9 +177,8 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
       Endpoints endpoints =
           new EndpointsBuilder()
               .withNewMetadata()
-              .withName(resourceName + "-endpoint")
+              .withName(resourceName)
               .withNamespace(flinkNameSpace)
-              .withLabels(singletonMap)
               .endMetadata()
               .withSubsets()
               .addNewSubset()
@@ -193,6 +188,7 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
               .addNewPort()
               .withName(portName)
               .withPort(serverPort)
+              .withProtocol("UDP")
               .endPort()
               .endSubset()
               .build();
