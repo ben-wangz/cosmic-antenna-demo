@@ -26,6 +26,8 @@ spec:
           value: "4"
         - name: "cosmic_antenna_app_source_parallelism"
           value: "1"
+        - name: "cosmic_antenna_app_client_default_port"
+          value: "1080"
         - name: "cosmic_antenna_fpga_package_header_size"
           value: "8"
         - name: "cosmic_antenna_fpga_channel_size"
