@@ -1,0 +1,40 @@
+---
+apiVersion: "apps/v1"
+kind: "StatefulSet"
+metadata:
+  name: "fpga-mock-stateful"
+spec:
+  selector:
+    matchLabels:
+      app: "nginx"
+  serviceName: "nginx"
+  replicas: 2
+  minReadySeconds: 3
+  template:
+    metadata:
+      labels:
+        app: "nginx"
+    spec:
+      terminationGracePeriodSeconds: 3
+      containers:
+      - name: "nginx"
+        image: "localhost/fpga-mock:1.0.1"
+        env:
+        - name: "FPGA_CLIENT_HOST_PREFIX"
+          value: "job-template-fpga-server-"
+        - name: "FPGA_CLIENT_PORT"
+          value: "1080"
+        - name: "RECORD_COUNT"
+          value: "-1"
+        - name: "RECORD_INTERVAL_MILLISECONDS"
+          value: "1000"
+        - name: "CHANNEL_SIZE"
+          value: "10"
+        - name: "TIME_SAMPLE_SIZE"
+          value: "16"
+        - name: "DATA_CHUNK_SIZE"
+          value: "160"
+        - name: "ANTENNA_START_INDEX"
+          value: "0"
+        - name: "ANTENNA_INDEX_INCREMENT"
+          value: "8"

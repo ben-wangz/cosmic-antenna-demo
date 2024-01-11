@@ -26,6 +26,8 @@ spec:
           value: "4"
         - name: "cosmic_antenna_app_source_parallelism"
           value: "1"
+        - name: "cosmic_antenna_app_client_default_port"
+          value: "1080"
         - name: "cosmic_antenna_fpga_package_header_size"
           value: "8"
         - name: "cosmic_antenna_fpga_channel_size"
@@ -92,6 +94,6 @@ spec:
       memory: "2048m"
       cpu: 1
   job:
-    jarURI: "local:///opt/flink/downloads/flink-1.0.0-all.jar"
+    jarURI: "local:///opt/flink/downloads/flink-1.0.3-all.jar"
     parallelism: 1
     upgradeMode: "stateless"

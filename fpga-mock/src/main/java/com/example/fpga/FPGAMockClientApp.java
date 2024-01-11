@@ -18,11 +18,13 @@ public class FPGAMockClientApp {
     LOGGER.info("Creating a new FPGA UDP Client");
     String host = Optional.ofNullable(System.getenv("FPGA_CLIENT_HOST")).orElse("10.11.32.44");
     int port =
-        Optional.ofNullable(System.getenv("FPGA_CLIENT_PORT")).map(Integer::parseInt).orElse(18888);
+        Optional.ofNullable(System.getenv("FPGA_CLIENT_PORT")).map(Integer::parseInt).orElse(1080);
     int count =
         Optional.ofNullable(System.getenv("RECORD_COUNT")).map(Integer::parseInt).orElse(-1);
     int interval =
-        Optional.ofNullable(System.getenv("RECORD_INTERVAL")).map(Integer::parseInt).orElse(1000);
+        Optional.ofNullable(System.getenv("RECORD_INTERVAL_MILLISECONDS"))
+            .map(Integer::parseInt)
+            .orElse(1000);
     int channelSize =
         Optional.ofNullable(System.getenv("CHANNEL_SIZE")).map(Integer::parseInt).orElse(10);
     int timeSampleSize =
