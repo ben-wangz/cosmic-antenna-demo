@@ -148,10 +148,10 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
   }
 
   private void initK8sResources(
-      String jobName, int sourceId, String ipAddr, int clientPort, int serverPort)
+      String jobName, int sourceId, String ipAddr, int port, int targetPort)
       throws JsonProcessingException {
     String resourceName = String.format("%s-fpga-server-%s", jobName, sourceId);
-    String portName = "fpga-server-" + RandomStringUtils.randomAlphabetic(6).toLowerCase();
+    String portName = "fpga";
 
     LOGGER.info("going to init k8s endpoint and service resource.");
     try (KubernetesClient kubernetesClient = new KubernetesClientBuilder().build()) {
@@ -165,8 +165,8 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
               .addNewPort()
               .withName(portName)
               .withProtocol("UDP")
-              .withPort(clientPort)
-              .withTargetPort(new IntOrString(serverPort))
+              .withPort(port)
+              .withTargetPort(new IntOrString(targetPort))
               .endPort()
               .endSpec()
               .build();
@@ -187,7 +187,7 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
               .endAddress()
               .addNewPort()
               .withName(portName)
-              .withPort(serverPort)
+              .withPort(targetPort)
               .withProtocol("UDP")
               .endPort()
               .endSubset()
