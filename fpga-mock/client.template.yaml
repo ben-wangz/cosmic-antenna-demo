@@ -7,7 +7,7 @@ spec:
     matchLabels:
       app: nginx
   serviceName: "nginx"
-  replicas: 1
+  replicas: 2
   minReadySeconds: 3
   template:
     metadata:
@@ -32,7 +32,7 @@ spec:
             - name: "TIME_SAMPLE_SIZE"
               value: "16"
             - name: "DATA_CHUNK_SIZE"
-              value: ""
+              value: "160"
             - name: "ANTENNA_START_INDEX"
               value: "0"
             - name: "ANTENNA_INDEX_INCREMENT"
