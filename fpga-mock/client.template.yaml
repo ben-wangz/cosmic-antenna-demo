@@ -18,7 +18,7 @@ spec:
       terminationGracePeriodSeconds: 3
       containers:
       - name: "nginx"
-        image: "localhost/fpga-mock:1.0.1"
+        image: "localhost/fpga-mock:1.0.3"
         env:
         - name: "FPGA_CLIENT_HOST_PREFIX"
           value: "job-template-fpga-server-"

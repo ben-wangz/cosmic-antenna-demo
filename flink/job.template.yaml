@@ -68,7 +68,7 @@ spec:
       spec:
         initContainers:
         - name: "s3-sync-jar"
-          image: "localhost/s3sync:1.0.0"
+          image: "localhost/s3sync:1.0.3"
           env:
           - name: "TZ"
             value: "Asia/Shanghai"
