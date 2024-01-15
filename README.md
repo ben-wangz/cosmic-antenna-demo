@@ -2,22 +2,17 @@
 
 ### building steps
 
-1. install docker
+1. install podman
 
     ```shell
     systemctl stop firewalld && systemctl disable firewalld
-    sudo dnf -y install dnf-plugins-core
-    sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
-    ```
-
-    ```shell
-    sudo dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    sudo systemctl start docker
-    docker run -d -P m.daocloud.io/docker.io/library/nginx
+    sudo dnf install -y podman
+    podman run -d -P m.daocloud.io/docker.io/library/nginx
     ```
 
 2. install kind
     ```shell
+   # install kind and kubectl
     mkdir -p $HOME/bin \
     && export PATH="$HOME/bin:$PATH"
     && curl -o kind -L https://resource-ops.lab.zjvis.net:32443/binary/kind/v0.20.1/kind-linux-amd64 \
@@ -30,27 +25,38 @@
     # create a cluster
     kind create cluster --name cs-cluster --image m.daocloud.io/docker.io/kindest/node:v1.27.3
     ```
+   
+   ```shell
+   DOCKER_IMAGE_PATH=/root/docker-images && mkdir -p $DOCKER_IMAGE_PATH
+   BASE_URL="https://resource-ops-dev.lab.zjvis.net:32443/docker-images"
+   for IMAGE in "quay.io_argoproj_argocd_v2.9.3.dim" \
+                "ghcr.io_dexidp_dex_v2.37.0.dim" \
+                "redis_7.0.11-alpine.dim"
+   do
+   IMAGE_FILE=$DOCKER_IMAGE_PATH/$IMAGE
+   if [ ! -f $IMAGE_FILE ]; then
+      TMP_FILE=$IMAGE_FILE.tmp \
+      && curl -o "$TMP_FILE" -L "$BASE_URL/$IMAGE" \
+      && mv $TMP_FILE $IMAGE_FILE
+   fi
+   kind -n cs-cluster load image-archive $IMAGE_FILE
+   done
+   ```
 
     ```shell
-    # install cert-manger ingress argocd
-    kubectl create namespace argocd
-    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-    
-    # download argocd cli
-    # [slow 9 mins]
-    curl -sSL -o $HOME/bin/argocd https://mirror.ghproxy.com/https://github.com/argoproj/argo-cd/releases/download/v2.8.4/argocd-linux-amd64 \
+    # install cert-manger ingress argo-cd
+    kubectl create namespace argocd \
+    && kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    # download argo-cd cli
+    curl -sSL -o $HOME/bin/argocd https://hub.yzuu.cf/argoproj/argo-cd/releases/download/v2.8.4/argocd-linux-amd64 \
       && chmod u+x $HOME/bin/argocd
-
-    # [Local, optional]
-    curl -sSL -o $HOME/bin/argocd https://github.com.cnpmjs.org/argoproj/argo-cd/releases/download/v2.8.4/argocd-linux-amd64 \
-      && chmod u+x $HOME/bin/argocd
+    # github available mirrors -> hub.njuu.cf/   hub.yzuu.cf/  hub.nuaa.cf/   hub.fgit.ml/
     ```
     
     ```shell
-    # get initial argocd password
+    # get initial argo-cd password
     kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
-   
-    # login argocd
+    # login argo-cd
     argocd login --insecure --username admin ip:30443
     ```   
     
@@ -75,32 +81,26 @@
 4. install git
 
     ```shell
-    sudo dnf install -y git
-    ```
-    ```shell
-    cd ~ && git clone https://github.com/ben-wangz/cosmic-antenna-demo.git
+    sudo dnf install -y git \
+    && git clone https://github.com/AaronYang2333/cosmic-antenna-demo.git ~
     ```
 
-5. install java
+5. prepare image
     ```shell
-    sudo dnf install -y java-11-openjdk.x86_64
-    ```
-
-6. prepare image
-    ```shell
-   # build application images
-    ~/cosmic-antenna-demo/gradlew :s3sync:buildImage \
+   # build application images [slow 13 mins]
+    sudo dnf install -y java-11-openjdk.x86_64 \
+    && ~/cosmic-antenna-demo/gradlew :s3sync:buildImage \
     && ~/cosmic-antenna-demo/gradelw :fpga-mock:buildImage
-    #CHECK do we need to scp and crt load
-    docker save -o 
-    ctr load
+    # save and load in different node
+    # podman save --quiet -o fpga-mock_1.0.3.dim localhost/fpga-mock:1.0.3
+    # ctr -n k8s.io image import --base-name localhost/fpga-mock:1.0.3 /tmp/fpga-mock_1.0.3.dim
     ```
 
-7. prepare k8s resources [pv, pvc, statefulSet]
+6. prepare k8s resources [pv, pvc, statefulSet]
     ```shell
     # copy (asdasda)[./flink/pv.template.yaml]
-    cp ~/cosmic-antenna-demo/flink/*.yaml /tmp
-    mkdir /mnt/flink-job
+    cp ~/cosmic-antenna-demo/flink/*.yaml /tmp \
+    && mkdir /mnt/flink-job
     #
     kubectl -n flink create -f /tmp/pv.template.yaml /tmp/pvc.template.yaml
     #
@@ -112,10 +112,10 @@
     kubectl -n flink create -f /tmp/client.template.yaml
     ```
 
-8. check dashboard in browser
+7. check dashboard in browser
 
    ```shell
-   # job-template-example.flink.lab.zjvis.net
+   # go to https://job-template-example.flink.lab.zjvis.net
    ```
 
 

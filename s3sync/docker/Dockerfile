@@ -1,4 +1,4 @@
-ARG OPEN_JDK=docker.io/library/openjdk:11-oraclelinux8
+ARG OPEN_JDK=docker-registry-ops-dev.lab.zjvis.net:32443/docker.io/library/openjdk:11-oraclelinux8
 FROM ${OPEN_JDK}
 ENV TZ=Asia/Shanghai
 ARG JAR_NAME=s3-sync-1.0.0.jar
