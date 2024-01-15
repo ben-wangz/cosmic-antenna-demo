@@ -5,52 +5,55 @@
 1. install docker
 
     ```shell
+    systemctl stop firewalld && systemctl disable firewalld
     sudo dnf -y install dnf-plugins-core
     sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
     ```
 
     ```shell
-    sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    ```
-
-    ```shell
+    sudo dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
     sudo systemctl start docker
-    sudo docker run hello-world
+    docker run -d -P m.daocloud.io/docker.io/library/nginx
     ```
 
 2. install kind
     ```shell
-    systemctl stop firewalld && systemctl disable firewalld
-    # For AMD64 / x86_64
-    [ $(uname -m) = x86_64 ] && curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
-    # For ARM64
-    [ $(uname -m) = aarch64 ] && curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-arm64
-    chmod +x ./kind
-    sudo mv ./kind $HOME/bin/kind
+    mkdir -p $HOME/bin \
+    && export PATH="$HOME/bin:$PATH"
+    && curl -o kind -L https://resource-ops.lab.zjvis.net:32443/binary/kind/v0.20.1/kind-linux-amd64 \
+    && chmod u+x kind && mv kind $HOME/bin \
+    && curl -o kubectl -L https://resource-ops.lab.zjvis.net:32443/binary/kubectl/v1.21.2/bin/linux/amd64/kubectl \
+    && chmod u+x kubectl && mv kubectl $HOME/bin
     ```
-    
+
     ```shell
-    kind create cluster --name cs-cluster
+    # create a cluster
+    kind create cluster --name cs-cluster --image m.daocloud.io/docker.io/kindest/node:v1.27.3
     ```
-    
+
     ```shell
     # install cert-manger ingress argocd
     kubectl create namespace argocd
     kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
     
     # download argocd cli
-    mkdir -p $HOME/bin \
-      && curl -sSL -o $HOME/bin/argocd https://github.com/argoproj/argo-cd/releases/download/v2.8.4/argocd-linux-amd64 \
+    # [slow 9 mins]
+    curl -sSL -o $HOME/bin/argocd https://mirror.ghproxy.com/https://github.com/argoproj/argo-cd/releases/download/v2.8.4/argocd-linux-amd64 \
+      && chmod u+x $HOME/bin/argocd
+
+    # [Local, optional]
+    curl -sSL -o $HOME/bin/argocd https://github.com.cnpmjs.org/argoproj/argo-cd/releases/download/v2.8.4/argocd-linux-amd64 \
       && chmod u+x $HOME/bin/argocd
     ```
     
     ```shell
-   # get initial argocd password
+    # get initial argocd password
     kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
    
-   # login argocd
+    # login argocd
     argocd login --insecure --username admin ip:30443
-    ```    
+    ```   
+    
 3. install essential app on argocd
     ```shell
     # install cert manger    
@@ -68,29 +71,29 @@
     kubectl -n argocd apply -f flink-operator.yaml
     argocd app sync argocd/flink-operator
     ```
-   
+
 4. install git
-    
+
     ```shell
     sudo dnf install -y git
     ```
     ```shell
-    cd ~
-    git clone https://github.com/ben-wangz/cosmic-antenna-demo.git
+    cd ~ && git clone https://github.com/ben-wangz/cosmic-antenna-demo.git
     ```
 
 5. install java
     ```shell
-    dnf install java-11-openjdk.x86_64
+    sudo dnf install -y java-11-openjdk.x86_64
     ```
-   
+
 6. prepare image
     ```shell
-    ~/cosmic-antenna-demo/gradlew :s3sync:buildImage
-    ~/cosmic-antenna-demo/gradelw :fpga-mock:buildImage
+   # build application images
+    ~/cosmic-antenna-demo/gradlew :s3sync:buildImage \
+    && ~/cosmic-antenna-demo/gradelw :fpga-mock:buildImage
     #CHECK do we need to scp and crt load
-   docker save -o 
-   ctr load
+    docker save -o 
+    ctr load
     ```
 
 7. prepare k8s resources [pv, pvc, statefulSet]
@@ -108,9 +111,9 @@
     cp ~/cosmic-antenna-demo/fpga-mock/client.template.yaml /tmp
     kubectl -n flink create -f /tmp/client.template.yaml
     ```
-   
+
 8. check dashboard in browser
-   
+
    ```shell
    # job-template-example.flink.lab.zjvis.net
    ```
