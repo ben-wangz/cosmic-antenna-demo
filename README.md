@@ -22,9 +22,11 @@
     ```
 
     ```shell
-    # create a cluster
+    # create a cluster using podman
     curl -o kind.cluster.yaml -L https://gist.githubusercontent.com/AaronYang2333/71335475279c8f9214e58e3556b0e84f/raw/c7c3886444bf6824b87be3d2e700ed77844a7466/kind-cluster.yaml \
+    && export KIND_EXPERIMENTAL_PROVIDER=podman \
     && kind create cluster --name cs-cluster --image m.daocloud.io/docker.io/kindest/node:v1.27.3 --config=./kind.cluster.yaml
+    # need to modify ~/.kube/config ---BUG
     ```
    
    ```shell
@@ -52,7 +54,7 @@
     && kubectl apply -n argocd -f https://gist.githubusercontent.com/AaronYang2333/10091b7dfeafb0c373aa38659ad9925b/raw/653421b67922e63c0df00b7f2b68886b2026a991/argo-cd.server.yaml
     # download argo-cd cli
     curl -sSL -o $HOME/bin/argocd https://hub.yzuu.cf/argoproj/argo-cd/releases/download/v2.8.4/argocd-linux-amd64 \
-      && chmod u+x $HOME/bin/argocd
+    && chmod u+x $HOME/bin/argocd
     # github available mirrors -> hub.njuu.cf/   hub.yzuu.cf/  hub.nuaa.cf/   hub.fgit.ml/
     ```
     
@@ -92,7 +94,6 @@
     && rm -rf $HOME/cosmic-antenna-demo \
     && mkdir $HOME/cosmic-antenna-demo \
     && git clone --branch pv_pvc_template https://github.com/AaronYang2333/cosmic-antenna-demo.git $HOME/cosmic-antenna-demo
-    # switch to specific branch
     ```
 
 5. prepare image
@@ -102,12 +103,10 @@
     sudo dnf install -y java-11-openjdk.x86_64 \
     && $HOME/cosmic-antenna-demo/gradlew :s3sync:buildImage \
     && $HOME/cosmic-antenna-demo/gradlew :fpga-mock:buildImage
-    # save and load in different node
-    # podman save --quiet -o $DOCKER_IMAGE_PATH/fpga-mock_1.0.3.dim localhost/fpga-mock:1.0.3 \
-    # ctr -n k8s.io image import --base-name localhost/fpga-mock:1.0.3 /tmp/fpga-mock_1.0.3.dim
     ```
 
     ```shell
+    # save and load in different node
     VERSION="1.0.3"
     podman save --quiet -o $DOCKER_IMAGE_PATH/fpga-mock_$VERSION.dim localhost/fpga-mock:$VERSION \
     && kind -n cs-cluster load image-archive $DOCKER_IMAGE_PATH/fpga-mock_$VERSION.dim
@@ -115,11 +114,10 @@
     && kind -n cs-cluster load image-archive $DOCKER_IMAGE_PATH/s3sync_$VERSION.dim
     ```
 
-6. prepare k8s resources [pv, pvc, statefulSet]
+6. prepare k8s resources [pv, pvc, sts]
     ```shell
-    # copy (asdasda)[./flink/pv.template.yaml]
-    cp $HOME/cosmic-antenna-demo/flink/*.yaml /tmp \
-    && mkdir /mnt/flink-job
+    cp -rf $HOME/cosmic-antenna-demo/flink/*.yaml /tmp \
+    && podman exec -d cs-cluster-control-plane mkdir -p /mnt/flink-job
     # create persist volume
     kubectl -n flink create -f /tmp/pv.template.yaml
     # create pv claim
