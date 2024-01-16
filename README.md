@@ -97,13 +97,22 @@
 
 5. prepare image
     ```shell
-   # build application images [slow 13 mins]
+   # build application images 
+   # cd into  $HOME/cosmic-antenna-demo
     sudo dnf install -y java-11-openjdk.x86_64 \
     && $HOME/cosmic-antenna-demo/gradlew :s3sync:buildImage \
-    && $HOME/cosmic-antenna-demo/gradelw :fpga-mock:buildImage
+    && $HOME/cosmic-antenna-demo/gradlew :fpga-mock:buildImage
     # save and load in different node
-    # podman save --quiet -o fpga-mock_1.0.3.dim localhost/fpga-mock:1.0.3
+    # podman save --quiet -o $DOCKER_IMAGE_PATH/fpga-mock_1.0.3.dim localhost/fpga-mock:1.0.3 \
     # ctr -n k8s.io image import --base-name localhost/fpga-mock:1.0.3 /tmp/fpga-mock_1.0.3.dim
+    ```
+
+    ```shell
+    VERSION="1.0.3"
+    podman save --quiet -o $DOCKER_IMAGE_PATH/fpga-mock_$VERSION.dim localhost/fpga-mock:$VERSION \
+    && kind -n cs-cluster load image-archive $DOCKER_IMAGE_PATH/fpga-mock_$VERSION.dim
+    podman save --quiet -o $DOCKER_IMAGE_PATH/s3sync_$VERSION.dim localhost/s3sync:$VERSION \
+    && kind -n cs-cluster load image-archive $DOCKER_IMAGE_PATH/s3sync_$VERSION.dim
     ```
 
 6. prepare k8s resources [pv, pvc, statefulSet]
@@ -111,15 +120,17 @@
     # copy (asdasda)[./flink/pv.template.yaml]
     cp $HOME/cosmic-antenna-demo/flink/*.yaml /tmp \
     && mkdir /mnt/flink-job
-    #
-    kubectl -n flink create -f /tmp/pv.template.yaml /tmp/pvc.template.yaml
-    #
+    # create persist volume
+    kubectl -n flink create -f /tmp/pv.template.yaml
+    # create pv claim
+    kubectl -n flink create -f /tmp/pvc.template.yaml
+    # start up flink application
     kubectl -n flink create -f /tmp/job.template.yaml
-    # 
+    # start up ingress
     kubectl -n flink create -f /tmp/ingress.forward.yaml
-    # 
-    cp $HOME/cosmic-antenna-demo/fpga-mock/client.template.yaml /tmp
-    kubectl -n flink create -f /tmp/client.template.yaml
+    # start up fpga UDP client, sending data 
+    cp $HOME/cosmic-antenna-demo/fpga-mock/client.template.yaml /tmp \
+    && kubectl -n flink create -f /tmp/client.template.yaml
     ```
 
 7. check dashboard in browser
