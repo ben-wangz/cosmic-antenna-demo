@@ -21,7 +21,7 @@ spec:
         image: "localhost/fpga-mock:1.0.3"
         env:
         - name: "FPGA_CLIENT_HOST_PREFIX"
-          value: "job-template-fpga-server-"
+          value: "job-template-example-fpga-server-"
         - name: "FPGA_CLIENT_PORT"
           value: "1080"
         - name: "RECORD_COUNT"

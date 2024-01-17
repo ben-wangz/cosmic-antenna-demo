@@ -34,16 +34,17 @@
    DOCKER_IMAGE_PATH=/root/docker-images && mkdir -p $DOCKER_IMAGE_PATH
    BASE_URL="https://resource-ops-dev.lab.zjvis.net:32443/docker-images"
    for IMAGE in "quay.io_argoproj_argocd_v2.9.3.dim" \
-                "ghcr.io_dexidp_dex_v2.37.0.dim" \
-                "redis_7.0.11-alpine.dim"
+       "ghcr.io_dexidp_dex_v2.37.0.dim" \
+       "docker.io_library_redis_7.0.11-alpine.dim" \
+       "docker.io_library_flink_1.17.dim"
    do
-   IMAGE_FILE=$DOCKER_IMAGE_PATH/$IMAGE
-   if [ ! -f $IMAGE_FILE ]; then
-      TMP_FILE=$IMAGE_FILE.tmp \
-      && curl -o "$TMP_FILE" -L "$BASE_URL/$IMAGE" \
-      && mv $TMP_FILE $IMAGE_FILE
-   fi
-   kind -n cs-cluster load image-archive $IMAGE_FILE
+       IMAGE_FILE=$DOCKER_IMAGE_PATH/$IMAGE
+       if [ ! -f $IMAGE_FILE ]; then
+          TMP_FILE=$IMAGE_FILE.tmp \
+          && curl -o "$TMP_FILE" -L "$BASE_URL/$IMAGE" \
+          && mv $TMP_FILE $IMAGE_FILE
+       fi
+       kind -n cs-cluster load image-archive $IMAGE_FILE
    done
    ```
 
@@ -72,19 +73,19 @@
 3. install essential app on argocd
     ```shell
     # install cert manger    
-    curl -LO https://raw.githubusercontent.com/ben-wangz/blog/main/docs/public/kubernetes/argocd/cert-manager/cert-manager.yaml
-    kubectl -n argocd apply -f cert-manager.yaml
-    argocd app sync argocd/cert-manager
+    curl -LO https://gist.githubusercontent.com/AaronYang2333/ec9446c1af9c0c0f7807dd84f81a7c0e/raw/0800c914c66f3e227732b5db8fcde5dc7f650804/cert-manager.yaml \
+    && kubectl -n argocd apply -f cert-manager.yaml \
+    && argocd app sync argocd/cert-manager
     
     # install ingress
-    curl -LO https://raw.githubusercontent.com/ben-wangz/blog/main/docs/public/kubernetes/argocd/ingress/ingress-nginx.yaml
-    kubectl -n argocd apply -f ingress-nginx.yaml
-    argocd app sync argocd/ingress-nginx
+    curl -LO https://gist.githubusercontent.com/AaronYang2333/76afa21b7c07f0d4006b419c0c33a424/raw/a5ac2bc4b1e6b874eeea70fdccfa2d6440ec960a/ingress-nginx.yaml \
+    && kubectl -n argocd apply -f ingress-nginx.yaml \
+    && argocd app sync argocd/ingress-nginx
    
     # install flink-kubernetes-operator
-    curl -LO https://raw.githubusercontent.com/ben-wangz/blog/main/docs/public/kubernetes/argocd/flink/flink-operator.yaml
-    kubectl -n argocd apply -f flink-operator.yaml
-    argocd app sync argocd/flink-operator
+    curl -LO https://gist.githubusercontent.com/AaronYang2333/090b92143f5a212c5909fc87ccb84833/raw/0b51e2ff318ffe59963e7b283bb6b13ae16a12f5/flink-operator.yaml \
+    && kubectl -n argocd apply -f flink-operator.yaml \
+    && argocd app sync argocd/flink-operator
     ```
 
 4. install git
@@ -106,13 +107,18 @@
     ```
 
     ```shell
-    # save and load in different node
+    # save and load into cluster
     VERSION="1.0.3"
     podman save --quiet -o $DOCKER_IMAGE_PATH/fpga-mock_$VERSION.dim localhost/fpga-mock:$VERSION \
     && kind -n cs-cluster load image-archive $DOCKER_IMAGE_PATH/fpga-mock_$VERSION.dim
     podman save --quiet -o $DOCKER_IMAGE_PATH/s3sync_$VERSION.dim localhost/s3sync:$VERSION \
     && kind -n cs-cluster load image-archive $DOCKER_IMAGE_PATH/s3sync_$VERSION.dim
     ```
+   
+   ```shell
+   # add services and endpoints authority
+   kubectl -n flink edit role/flink -o yaml
+   ```
 
 6. prepare k8s resources [pv, pvc, sts]
     ```shell
@@ -126,6 +132,9 @@
     kubectl -n flink create -f /tmp/job.template.yaml
     # start up ingress
     kubectl -n flink create -f /tmp/ingress.forward.yaml
+   ```
+   
+   ```shell
     # start up fpga UDP client, sending data 
     cp $HOME/cosmic-antenna-demo/fpga-mock/client.template.yaml /tmp \
     && kubectl -n flink create -f /tmp/client.template.yaml
@@ -134,7 +143,7 @@
 7. check dashboard in browser
 
    ```shell
-   # go to https://job-template-example.flink.lab.zjvis.net
+   # go to http://job-template-example.flink.lab.zjvis.net
    ```
 
 
