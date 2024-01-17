@@ -63,7 +63,7 @@ public class CosmicAntennaConf {
   public static final ConfigOption<String> K8S_RESOURCE_INIT_SWITCH =
       ConfigOptions.key("cosmic.antenna.k8s.init.switch")
           .stringType()
-          .defaultValue("true")
+          .defaultValue("false")
           .withDescription("if it true, will create service and endpoint");
   public static final ConfigOption<String> K8S_FLINK_NAMESPACE =
       ConfigOptions.key("cosmic.antenna.k8s.namespace")

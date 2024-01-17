@@ -11,13 +11,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import java.net.InetSocketAddress;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.shaded.netty4.io.netty.bootstrap.Bootstrap;
@@ -95,19 +92,20 @@ public class FPGASource extends RichParallelSourceFunction<AntennaData> {
         });
     ChannelFuture channelFuture = serverBootstrap.bind(0).sync();
     int serverPort = ((InetSocketAddress) channelFuture.channel().localAddress()).getPort();
-    String ipAddr =
-        Optional.ofNullable(
-                System.getenv(CosmicAntennaConf.K8S_POD_ADDRESS.key().replaceAll("\\.", "_")))
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "cannot find environment variable \"cosmic_antenna_k8s_pod_address\""));
-    LOGGER.info("inner netty server started at address: {}, port: {}", ipAddr, serverPort);
+
+    LOGGER.info("inner netty server started port: {}", serverPort);
 
     defaultChannelId = channelFuture.channel().id();
     defaultChannelGroup.add(channelFuture.channel());
 
     if (Boolean.parseBoolean(initSwitch)) {
+      String ipAddr =
+          Optional.ofNullable(
+                  System.getenv(CosmicAntennaConf.K8S_POD_ADDRESS.key().replaceAll("\\.", "_")))
+              .orElseThrow(
+                  () ->
+                      new IllegalArgumentException(
+                          "cannot find environment variable \"cosmic_antenna_k8s_pod_address\""));
       String jobName = ((Configuration) globalJobParameters).get(CosmicAntennaConf.JOB_NAME);
       Integer clientPort =
           ((Configuration) globalJobParameters).get(CosmicAntennaConf.FPGA_CLIENT_DEFAULT_PORT);

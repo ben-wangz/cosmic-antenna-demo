@@ -1,0 +1,23 @@
+---
+apiVersion: "v1"
+kind: "PersistentVolume"
+metadata:
+  name: "flink-deployment-pv"
+spec:
+  capacity:
+    storage: "50Gi"
+  storageClassName: "local-storage"
+  volumeMode: "Filesystem"
+  accessModes:
+  - "ReadWriteMany"
+  persistentVolumeReclaimPolicy: "Delete"
+  local:
+    path: "/mnt/flink-job"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: "kubernetes.io/hostname"
+          operator: "In"
+          values:
+          - "cs-cluster-control-plane"

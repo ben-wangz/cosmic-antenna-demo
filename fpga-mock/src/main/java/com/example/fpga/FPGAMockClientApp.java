@@ -16,7 +16,7 @@ public class FPGAMockClientApp {
 
   public static void main(String[] args) throws Exception {
     LOGGER.info("Creating a new FPGA UDP Client");
-    String host = Optional.ofNullable(System.getenv("FPGA_CLIENT_HOST")).orElse("10.11.32.44");
+    String host = Optional.ofNullable(System.getenv("FPGA_CLIENT_HOST")).orElse("127.0.0.1");
     int port =
         Optional.ofNullable(System.getenv("FPGA_CLIENT_PORT")).map(Integer::parseInt).orElse(1080);
     int count =
